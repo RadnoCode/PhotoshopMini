@@ -131,7 +131,12 @@ class App {
       tools.setTool(new RotateTool(history));
       return;
     }
-  }
+  
+    if (k=='s' || k=='S') {
+        tools.setTool(new ScaleTool(history));
+        return;
+    }
+}
 }
 
 // =======================================================
@@ -353,8 +358,42 @@ class ToolManager {
   }
 }
 
+// ---------- Move tool (view-only change, not a command) ----------
+class MoveTool implements Tool {
+  boolean dragging = false;
+  int lastX, lastY;
 
-// Rotate
+  public void mousePressed(Document doc, int mx, int my, int btn) {
+    if (btn != LEFT) return;
+    dragging = true;
+    lastX = mx;
+    lastY = my;
+  }
+
+  public void mouseDragged(Document doc, int mx, int my, int btn) {
+    if (!dragging) return;
+    doc.view.panX += (mx - lastX);
+    doc.view.panY += (my - lastY);
+    lastX = mx;
+    lastY = my;
+  }
+
+  public void mouseReleased(Document doc, int mx, int my, int btn) {
+    dragging = false;
+  }
+
+  public void mouseWheel(Document doc, float delta) {
+    doc.view.zoomAroundMouse(delta);
+  }
+
+  public void drawOverlay(Document doc) {
+  }
+  public String name() {
+    return "Move";
+  }
+}
+
+// Rotate Tool
 class RotateTool implements Tool{
   
   CommandManager history;
@@ -362,8 +401,6 @@ class RotateTool implements Tool{
   Layer target;
 
   float startAngle,startRotation;
-  float MouConX,MouConY;
-  float endX,endY;
   PVector pivotCanvas;
   
   RotateTool(CommandManager history) {
@@ -403,39 +440,45 @@ class RotateTool implements Tool{
   String name() {return "Rotate";}
 }
 
-// ---------- Move tool (view-only change, not a command) ----------
-class MoveTool implements Tool {
-  boolean dragging = false;
-  int lastX, lastY;
+class ScaleTool implements Tool{
+  boolean dragging=false;
+  Layer target;
+  CommandManager history ;
+  float startX,startY,endX,endY;
+  PVector pivotCanvas;
+  float scaleDelta;                                        
+  ScaleTool(CommandManager history){
+    this.history =history;
+  }
 
-  public void mousePressed(Document doc, int mx, int my, int btn) {
-    if (btn != LEFT) return;
+  void mousePressed(Document doc, int mx, int my, int btn){
+    if(btn!=LEFT) return;
     dragging = true;
-    lastX = mx;
-    lastY = my;
+    target=doc.layers.getActive();
+    pivotCanvas=target.pivotCanvas();
+    startX=doc.view.screenToCanvasX(mouseX);
+    startY=doc.view.screenToCanvasY(mouseY);
+    scaleDelta=target.scale;
   }
 
-  public void mouseDragged(Document doc, int mx, int my, int btn) {
-    if (!dragging) return;
-    doc.view.panX += (mx - lastX);
-    doc.view.panY += (my - lastY);
-    lastX = mx;
-    lastY = my;
+  void mouseDragged(Document doc, int mx, int my, int btn){
+    if(!dragging) return;
+    endX=doc.view.screenToCanvasX(mouseX);
+    float ratio=(endX-pivotCanvas.x)/(startX-pivotCanvas.x);
+    scaleDelta=ratio;
+    target.scale=scaleDelta;
   }
-
-  public void mouseReleased(Document doc, int mx, int my, int btn) {
-    dragging = false;
+  void mouseReleased(Document doc, int mx, int my, int btn){
+    dragging=false;
+    history.perform(doc,new ScaleCommand(target,target.scale,scaleDelta));
   }
-
-  public void mouseWheel(Document doc, float delta) {
-    doc.view.zoomAroundMouse(delta);
+  void mouseWheel(Document doc, float delta){
+    return;
   }
-
-  public void drawOverlay(Document doc) {
+  void drawOverlay(Document doc){
+    return;
   }
-  public String name() {
-    return "Move";
-  }
+  String name() {return "Scale";}
 }
 
 // ---------- Crop tool (creates a CropCommand on release) ----------
@@ -598,6 +641,25 @@ class RotateCommand implements Command{
 
 }
 
+class ScaleCommand implements Command{
+  Layer target;
+  float before,after;
+  ScaleCommand(Layer tar,float befS,float aftS){
+    target=tar;
+    before=befS;
+    after=aftS;
+  }
+  void execute(Document doc){
+    target.scale=after;
+  }
+  void undo(Document doc){
+    target.scale=before;
+  }
+  String name(){
+    return"Scale";
+  }
+}
+
 // ---------- CropCommand (stores before snapshot for undo) ----------
 class CropCommand implements Command {
   IntRect rect;
@@ -655,15 +717,17 @@ class CropCommand implements Command {
 // 6) UI: intent generator + hit-test consume
 // =======================================================
 class UI {
-  int panelX = 920;
-  int panelW = 170;
+  
+  int RightpanelW = 170;
+  int RightpanelX =width-RightpanelW;
+
 
   UIButton btnOpen, btnMove, btnCrop, btnUndo, btnRedo;
 
   UI() {
-    int x = panelX + 12;
+    int x = RightpanelX + 12;
     int y = 20;
-    int w = panelW - 24;
+    int w = RightpanelW - 24;
     int h = 28;
     int gap = 10;
 
@@ -683,7 +747,7 @@ class UI {
     // panel background
     noStroke();
     fill(45);
-    rect(panelX, 0, panelW, height);
+    rect(RightpanelX, 0, RightpanelW, height);
 
     // buttons
     btnOpen.draw(false);
@@ -695,22 +759,22 @@ class UI {
     // status
     fill(230);
     textSize(12);
-    text("Active Tool: " + tools.activeName(), panelX + 12, height - 70);
-    text("Undo: " + /*history.undoCount()*/mouseX, panelX + 12, height - 50);
-    text("Redo: " + /*history.redoCount()*/mouseY, panelX + 12, height - 30);
+    text("Active Tool: " + tools.activeName(), RightpanelX + 12, height - 70);
+    text("Undo: " + /*history.undoCount()*/mouseX, RightpanelX + 12, height - 50);
+    text("Redo: " + /*history.redoCount()*/mouseY, RightpanelX + 12, height - 30);
 
     if (doc.layers.getActive() == null || doc.layers.getActive().img == null) {
       fill(255, 160, 160);
-      text("No image loaded.", panelX + 12, height - 95);
+      text("No image loaded.", RightpanelX + 12, height - 95);
     } else {
       fill(180);
       Layer a = doc.layers.getActive();
-      text("Image: " + a.img.width + "x" + a.img.height, panelX + 12, height - 95);
+      text("Image: " + a.img.width + "x" + a.img.height, RightpanelX + 12, height - 95);
     }
   }
 
   boolean handleMousePressed(App app, int mx, int my, int btn) {
-    if (mx < panelX) return false;
+    if (mx < RightpanelX) return false;
 
     // buttons (generate intents)
     if (btnOpen.hit(mx, my)) {
@@ -738,10 +802,10 @@ class UI {
   }
 
   boolean handleMouseDragged(App app, int mx, int my, int btn) {
-    return (mx >= panelX);
+    return (mx >= RightpanelX);
   }
   boolean handleMouseReleased(App app, int mx, int my, int btn) {
-    return (mx >= panelX);
+    return (mx >= RightpanelX);
   }
   boolean handleMouseWheel(App app, float delta) {
     return false;
