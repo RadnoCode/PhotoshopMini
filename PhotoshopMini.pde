@@ -4,10 +4,11 @@ App app;
 
 
 void settings() {
-  size(int(displayWidth * 0.5), int(displayHeight * 0.5));
+  int WinHeight=int(displayHeight*0.8);
+  int WinWideth=int(displayWidth*0.8);
+  size(WinWideth,WinHeight);
 }
-int WinHeight=int(displayHeight*0.5);
-int WinWideth=int(displayWidth*0.5);
+
 
 void setup() {
   surface.setTitle("Crop Demo - Command startYstem (Single File)");
@@ -211,7 +212,10 @@ class Layer {
   float x = 0;            // translation
   float y = 0;
   float rotation = 0;     // radians
-  float scale = 1.0;      // uniform.................................................................................................................................................................................00000000000000000
+  float scale = 1.0;      // 
+
+  //Other properties
+  float blur,sharp;// need to be initialize
 
   // Pivot in LOCAL space (image space)
   float pivotX = 0;
@@ -720,6 +724,7 @@ class UI {
   
   int RightpanelW = 170;
   int RightpanelX =width-RightpanelW;
+  int LeftPannelW=64;
 
 
   UIButton btnOpen, btnMove, btnCrop, btnUndo, btnRedo;
@@ -748,6 +753,7 @@ class UI {
     noStroke();
     fill(45);
     rect(RightpanelX, 0, RightpanelW, height);
+    rect(0,0,LeftPannelW,height);
 
     // buttons
     btnOpen.draw(false);
@@ -760,8 +766,8 @@ class UI {
     fill(230);
     textSize(12);
     text("Active Tool: " + tools.activeName(), RightpanelX + 12, height - 70);
-    text("Undo: " + /*history.undoCount()*/mouseX, RightpanelX + 12, height - 50);
-    text("Redo: " + /*history.redoCount()*/mouseY, RightpanelX + 12, height - 30);
+    text("X-axis: " + /*history.undoCount()*/mouseX, RightpanelX + 12, height - 50);
+    text("Y-axis: " + /*history.redoCount()*/mouseY, RightpanelX + 12, height - 30);
 
     if (doc.layers.getActive() == null || doc.layers.getActive().img == null) {
       fill(255, 160, 160);
