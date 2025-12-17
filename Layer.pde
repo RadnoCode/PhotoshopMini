@@ -95,18 +95,21 @@ class LayerStack {
     }
   }
 
-  void moveLayer(int from, int to) {
-    if (from < 0 || from >= list.size()) return;
-    int clampedTo = constrain(to, 0, list.size() - 1);
-    if (from == clampedTo) return;
+  // Move a layer to a new position while keeping the active index consistent.
+  void moveLayer(int fromIndex, int toIndex) {
+    if (fromIndex < 0 || fromIndex >= list.size()) return;
 
-    Layer l = list.remove(from);
+    int clampedTo = constrain(toIndex, 0, list.size() - 1);
+    if (fromIndex == clampedTo) return;
+
+    Layer l = list.remove(fromIndex);
     list.add(clampedTo, l);
-    if (activeIndex == from) {
+
+    if (activeIndex == fromIndex) {
       activeIndex = clampedTo;
-    } else if (activeIndex > from && activeIndex <= clampedTo) {
+    } else if (activeIndex > fromIndex && activeIndex <= clampedTo) {
       activeIndex--;
-    } else if (activeIndex < from && activeIndex >= clampedTo) {
+    } else if (activeIndex < fromIndex && activeIndex >= clampedTo) {
       activeIndex++;
     }
   }
