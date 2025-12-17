@@ -1,4 +1,6 @@
 class UI {
+  PApplet parent;
+  Document doc;
   
   int RightpanelW = 270;
   int RightpanelX =width-RightpanelW;
@@ -6,8 +8,11 @@ class UI {
 
 
   UIButton btnOpen, btnMove, btnCrop, btnUndo, btnRedo;
+  LayerListPanel layerListPanel;
 
-  UI() {
+  UI(PApplet parent, Document doc) {
+    this.parent = parent;
+    this.doc = doc;
     int x = RightpanelX + 12;
     int y = 20;
     int w = RightpanelW - 24;
@@ -24,6 +29,8 @@ class UI {
     y += h + gap;
     btnRedo = new UIButton(x, y, w, h, "Redo");
     y += h + gap;
+
+    layerListPanel = new LayerListPanel(parent, doc, RightpanelX, RightpanelW, y);
   }
 
   void draw(Document doc, ToolManager tools, CommandManager history) {
@@ -55,6 +62,9 @@ class UI {
       Layer a = doc.layers.getActive();
       text("Image: " + a.img.width + "x" + a.img.height, RightpanelX + 12, height - 95);
     }
+
+    layerListPanel.refresh(doc);
+    layerListPanel.updateLayout(RightpanelX, RightpanelW, height);
   }
 
   boolean handleMousePressed(App app, int mx, int my, int btn) {
@@ -106,6 +116,7 @@ class UI {
 
     // set doc content
     Layer l=new Layer(img);
+    l.name = "Layer " + (doc.layers.list.size() + 1);
     doc.layers.list.add(l);
     doc.layers.activeIndex=doc.layers.indexOf(l);
 
@@ -115,6 +126,7 @@ class UI {
     doc.view.panY = 50;
 
     doc.renderFlags.dirtyComposite = true;
+    layerListPanel.refresh(doc);
   }
 }
 class UIButton {
@@ -143,5 +155,172 @@ class UIButton {
     textSize(12);
     text(label, x+10, y + h/2);
     textAlign(LEFT, BASELINE);
+  }
+}
+
+class LayerListPanel {
+  PApplet parent;
+  Document doc;
+  int rightPanelX;
+  int panelWidth;
+  int topY;
+
+  DefaultListModel<String> model = new DefaultListModel<String>();
+  JList<String> list = new JList<String>(model);
+  JScrollPane scrollPane;
+  JButton addButton = new JButton("+");
+  JPanel container = new JPanel(new BorderLayout(6, 6));
+
+  LayerListPanel(PApplet parent, Document doc, int rightPanelX, int panelWidth, int topY) {
+    this.parent = parent;
+    this.doc = doc;
+    this.rightPanelX = rightPanelX;
+    this.panelWidth = panelWidth;
+    this.topY = topY;
+
+    configureList();
+    configureHeader();
+    attachToFrame();
+    refresh(doc);
+  }
+
+  void configureList() {
+    list.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+    list.setDragEnabled(true);
+    list.setDropMode(DropMode.INSERT);
+    list.setTransferHandler(new ReorderHandler());
+    list.setBackground(new Color(55, 55, 55));
+    list.setForeground(Color.WHITE);
+    list.setBorder(BorderFactory.createEmptyBorder(4, 6, 4, 6));
+    list.addListSelectionListener(new ListSelectionListener() {
+      public void valueChanged(ListSelectionEvent e) {
+        if (!e.getValueIsAdjusting()) {
+          doc.layers.activeIndex = list.getSelectedIndex();
+        }
+      }
+    });
+    list.addKeyListener(new KeyAdapter() {
+      public void keyPressed(KeyEvent e) {
+        if (e.getKeyCode() == KeyEvent.VK_DELETE) {
+          deleteSelectedLayer();
+        }
+      }
+    });
+
+    scrollPane = new JScrollPane(list);
+    scrollPane.setBorder(BorderFactory.createLineBorder(new Color(70, 70, 70)));
+    scrollPane.getViewport().setBackground(new Color(45, 45, 45));
+    scrollPane.setBackground(new Color(45, 45, 45));
+  }
+
+  void configureHeader() {
+    JPanel header = new JPanel(new BorderLayout());
+    header.setOpaque(false);
+    JLabel label = new JLabel("Layers");
+    label.setForeground(Color.WHITE);
+
+    addButton.setMargin(new Insets(2, 8, 2, 8));
+    addButton.addActionListener(new ActionListener() {
+      public void actionPerformed(ActionEvent e) {
+        addBlankLayer();
+      }
+    });
+
+    header.add(label, BorderLayout.WEST);
+    header.add(addButton, BorderLayout.EAST);
+
+    container.setOpaque(false);
+    container.add(header, BorderLayout.NORTH);
+    container.add(scrollPane, BorderLayout.CENTER);
+  }
+
+  void attachToFrame() {
+    PSurfaceAWT surf = (PSurfaceAWT) parent.getSurface();
+    PSurfaceAWT.SmoothCanvas canvas = (PSurfaceAWT.SmoothCanvas) surf.getNative();
+    JFrame frame = (JFrame) canvas.getFrame();
+    frame.getLayeredPane().add(container, JLayeredPane.PALETTE_LAYER);
+    frame.getLayeredPane().setLayout(null);
+  }
+
+  void updateLayout(int rightPanelX, int panelWidth, int parentHeight) {
+    this.rightPanelX = rightPanelX;
+    this.panelWidth = panelWidth;
+    int margin = 10;
+    int availableHeight = Math.max(120, parentHeight - topY - 30);
+    container.setBounds(rightPanelX + margin, topY, panelWidth - margin * 2, availableHeight);
+    container.revalidate();
+  }
+
+  void refresh(Document updatedDoc) {
+    this.doc = updatedDoc;
+    while (model.getSize() > updatedDoc.layers.list.size()) {
+      model.remove(model.getSize() - 1);
+    }
+    for (int i = 0; i < updatedDoc.layers.list.size(); i++) {
+      String name = updatedDoc.layers.list.get(i).name;
+      if (i < model.getSize()) {
+        if (!model.get(i).equals(name)) model.set(i, name);
+      } else {
+        model.addElement(name);
+      }
+    }
+
+    int active = updatedDoc.layers.activeIndex;
+    if (active >= 0 && active < model.getSize()) {
+      list.setSelectedIndex(active);
+    } else {
+      list.clearSelection();
+    }
+  }
+
+  void addBlankLayer() {
+    PImage blank = parent.createImage(doc.canvas.w, doc.canvas.h, ARGB);
+    blank.loadPixels();
+    for (int i = 0; i < blank.pixels.length; i++) blank.pixels[i] = parent.color(0, 0, 0, 0);
+    blank.updatePixels();
+    Layer newLayer = new Layer(blank);
+    newLayer.name = "Layer " + (doc.layers.list.size() + 1);
+    doc.layers.insertAt(doc.layers.list.size(), newLayer);
+    doc.renderFlags.dirtyComposite = true;
+    refresh(doc);
+  }
+
+  void deleteSelectedLayer() {
+    int idx = list.getSelectedIndex();
+    if (idx >= 0) {
+      doc.layers.removeAt(idx);
+      doc.renderFlags.dirtyComposite = true;
+      refresh(doc);
+    }
+  }
+
+  class ReorderHandler extends TransferHandler {
+    int sourceIndex = -1;
+
+    public int getSourceActions(JComponent c) {
+      return MOVE;
+    }
+
+    protected Transferable createTransferable(JComponent c) {
+      sourceIndex = list.getSelectedIndex();
+      return new StringSelection(list.getSelectedValue());
+    }
+
+    public boolean canImport(TransferSupport support) {
+      return support.isDrop();
+    }
+
+    public boolean importData(TransferSupport support) {
+      if (!support.isDrop()) return false;
+      JList.DropLocation dl = (JList.DropLocation) support.getDropLocation();
+      int target = dl.getIndex();
+      if (sourceIndex < 0 || target == sourceIndex) return false;
+
+      doc.layers.move(sourceIndex, target);
+      doc.renderFlags.dirtyComposite = true;
+      refresh(doc);
+      list.setSelectedIndex(target);
+      return true;
+    }
   }
 }
