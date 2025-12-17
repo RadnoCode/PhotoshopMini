@@ -1,6 +1,6 @@
 class UI {
   
-  int RightpanelW = 170;
+  int RightpanelW = 270;
   int RightpanelX =width-RightpanelW;
   int LeftPannelW=64;
 
