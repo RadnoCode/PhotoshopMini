@@ -17,13 +17,15 @@ class Renderer {
 
     drawChecker(doc.canvas.w, doc.canvas.h, 20);
 
-    // draw active layer only (MVP)
-    Layer active = doc.layers.getActive();
-    if (active != null && active.img != null && active.visible) { 
+    // draw all layers from bottom to top
+    for (int i = doc.layers.list.size() - 1; i >= 0; i--) {
+      Layer layer = doc.layers.list.get(i);
+      if (layer == null || layer.img == null || !layer.visible) continue;
+
       pushMatrix();
-      active.applyTransform();
-      tint(255, 255 * active.opacity);
-      image(active.img, 0, 0);
+      layer.applyTransform();
+      tint(255, 255 * layer.opacity);
+      image(layer.img, 0, 0);
       noTint();
       popMatrix();
     }

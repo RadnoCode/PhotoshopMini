@@ -16,7 +16,7 @@ class App {
     renderer = new Renderer();
     tools = new ToolManager();
     history = new CommandManager();
-    ui = new UI();
+    ui = new UI(doc);
 
     tools.setTool(new MoveTool()); // When you enter, defualtly choose MoveTool 默认移动工具
   }// 生成函数，新建五大模块
