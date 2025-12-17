@@ -85,6 +85,10 @@ class LayerStack {
     else if (start < activeIndex && end >= activeIndex) activeIndex--;
     else if (start > activeIndex && end <= activeIndex) activeIndex++;
   }
+  void renane(Layer tar,String s){
+    if(tar==null) return;
+    tar.name = s;
+  }
 
   void setSingleLayer(Layer layer) {
     list.clear();

@@ -200,8 +200,8 @@ class LayerListPanel {
       }
     });
     list.addKeyListener(new KeyAdapter() {
-      public void keyPressed(KeyEvent e) {
-        if (e.getKeyCode() == KeyEvent.VK_DELETE) {
+      public void keyPressed(processing.event.KeyEvent e) {
+        if (e.getKeyCode() == java.awt.event.KeyEvent.VK_DELETE) {
           deleteSelectedLayer();
         }
       }

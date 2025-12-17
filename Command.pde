@@ -45,13 +45,18 @@ class AddLayerCommand implements Command{
   int index;
   AddLayerCommand(Document doc,Layer tar){
     this.l=tar;
+    this.index = doc.layers.list.size();
   }
   void execute(Document doc){
-    doc.layers.list.add(l);
+    doc.layers.insertAt(index, l);
+    // keep the chosen slot for redo even if layers move later
+    index = doc.layers.indexOf(l);
   }
   void undo(Document doc){
-    int index=doc.layers.indexOf(l);
-    doc.layers.removeAt(index);
+    int currentIndex = doc.layers.indexOf(l);
+    if (currentIndex >= 0) {
+      doc.layers.removeAt(currentIndex);
+    }
   }
   String name(){
     return "Add Layer";

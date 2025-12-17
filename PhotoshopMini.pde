@@ -42,7 +42,7 @@ void mouseDragged() {
 void mouseReleased() {
   app.onMouseReleased(mouseX, mouseY, mouseButton);
 }
-void mouseWheel(MouseEvent event) {
+void mouseWheel(processing.event.MouseEvent event) {
   app.onMouseWheel(event.getCount());
 }
 void keyPressed() {
