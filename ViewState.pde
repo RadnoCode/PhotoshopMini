@@ -8,6 +8,20 @@ class ViewState {
     scale(zoom);
   }
 
+  // Center the canvas inside the current Processing window with optional left/right
+  // padding so it stays visible when side panels are present.
+  void centerOnCanvas(int canvasW, int canvasH, int leftPadding, int rightPadding) {
+    float availableW = width - (leftPadding + rightPadding);
+    float availableH = height;
+
+    float desiredX = leftPadding + (availableW - canvasW) * 0.5;
+    float desiredY = (availableH - canvasH) * 0.5;
+
+    // Leave a small gap so the canvas border is visible even when the image is large.
+    panX = max(leftPadding + 10, desiredX);
+    panY = max(10, desiredY);
+  }
+
   public float screenToCanvasX(float MouX) {
     return (MouX - panX) / zoom;
   }

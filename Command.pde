@@ -64,10 +64,12 @@ class AddLayerCommand implements Command {
   public void execute(Document doc) {
     if (layer == null) return;
 
+    boolean wasEmpty = doc.layers.isEmpty();
+
     // When this is the first layer we are adding (including redo), capture the
     // old canvas/view to restore on undo and optionally resize to match the
     // incoming image so beginners immediately see the canvas fit the photo.
-    if (resizeCanvasIfFirst && doc.layers.isEmpty()) {
+    if (resizeCanvasIfFirst && wasEmpty) {
       if (!storedCanvasState) {
         prevCanvasW = doc.canvas.w;
         prevCanvasH = doc.canvas.h;
@@ -90,6 +92,12 @@ class AddLayerCommand implements Command {
     doc.layers.insertLayer(target, layer);
     this.index = target; // keep the clamped slot for redo/undo stability
     doc.renderFlags.dirtyComposite = true;
+
+    // Make sure the new canvas is visible (especially for the first import) by
+    // centering it within the window while respecting the space for side panels.
+    if (wasEmpty) {
+      doc.view.centerOnCanvas(doc.canvas.w, doc.canvas.h, 64, 200);
+    }
   }
 
   public void undo(Document doc) {
