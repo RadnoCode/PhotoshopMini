@@ -11,12 +11,12 @@ class App {
     UI：基本节目图像，以及一些可以发送给CommandM的指令。
     CommandManger：管理Command记录，发出更改Doc的指令
    */
-  App() {
+  App(PApplet parent) {
     doc = new Document();
     renderer = new Renderer();
     tools = new ToolManager();
     history = new CommandManager();
-    ui = new UI();
+    ui = new UI(parent, doc);
 
     tools.setTool(new MoveTool()); // When you enter, defualtly choose MoveTool 默认移动工具
   }// 生成函数，新建五大模块
