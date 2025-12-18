@@ -148,7 +148,7 @@ class LayerListPanel {
   }
 
   void addBlankLayer() {
-    PImage blank = parent.createImage(doc.canvas.w, doc.canvas.h, ARGB);
+    PImage blank = parent.createImage(doc.canvas.width, doc.canvas.height, ARGB);
     blank.loadPixels();
     for (int i = 0; i < blank.pixels.length; i++) blank.pixels[i] = parent.color(0, 0, 0, 0);
     blank.updatePixels();

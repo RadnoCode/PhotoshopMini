@@ -220,15 +220,15 @@ class CropCommand implements Command {
     // snapshot once (important for redo correctness)
     if (beforeImg == null) {
       beforeImg = layer.img.get();
-      beforeW = doc.canvas.w;
-      beforeH = doc.canvas.h;
+      beforeW = doc.canvas.width;
+      beforeH = doc.canvas.height;
     }
 
     // apply crop
     PImage cropped = layer.img.get(rect.x, rect.y, rect.w, rect.h);
     layer.img = cropped;
-    doc.canvas.h = cropped.height;
-    doc.canvas.w = cropped.width;
+    doc.canvas.height = cropped.height;
+    doc.canvas.width = cropped.width;
     doc.renderFlags.dirtyComposite = true;
   }
 
@@ -243,8 +243,8 @@ class CropCommand implements Command {
       layer.img = beforeImg.get();
     }
 
-    doc.canvas.w = beforeW;
-    doc.canvas.h = beforeH;
+    doc.canvas.width = beforeW;
+    doc.canvas.height = beforeH;
 
     doc.renderFlags.dirtyComposite = true;
   }

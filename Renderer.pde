@@ -15,7 +15,7 @@ class Renderer{
     pushMatrix();
     doc.view.applyTransform();
 
-    drawChecker(doc.canvas.w, doc.canvas.h, 20);
+    drawChecker(doc.canvas.width, doc.canvas.height, 20);
 
     for(int i=0;i<doc.layers.list.size();i++){
       Layer l=doc.layers.list.get(i);
@@ -43,7 +43,7 @@ class Renderer{
     // canvas border
     noFill();
     stroke(200);
-    rect(0, 0, doc.canvas.w, doc.canvas.h);
+    rect(0, 0, doc.canvas.width, doc.canvas.height);
 
     // tool overlay in canvas coords
     tools.drawOverlay(doc);

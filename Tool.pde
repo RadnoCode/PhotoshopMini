@@ -218,10 +218,10 @@ class CropTool implements Tool {
     // dim outside crop area
     noStroke();
     fill(0, 120);
-    rect(0, 0, doc.canvas.w, y1);
-    rect(0, y2, doc.canvas.w, doc.canvas.h - y2);
+    rect(0, 0, doc.canvas.width, y1);
+    rect(0, y2, doc.canvas.width, doc.canvas.height - y2);
     rect(0, y1, x1, y2 - y1);
-    rect(x2, y1, doc.canvas.w - x2, y2 - y1);
+    rect(x2, y1, doc.canvas.width - x2, y2 - y1);
 
     // crop border
     noFill();
@@ -247,10 +247,10 @@ class CropTool implements Tool {
     int x2 = ceil(max(ax, bx));
     int y2 = ceil(max(ay, by));
 
-    x1 = constrain(x1, 0, doc.canvas.w);
-    y1 = constrain(y1, 0, doc.canvas.h);
-    x2 = constrain(x2, 0, doc.canvas.w);
-    y2 = constrain(y2, 0, doc.canvas.h);
+    x1 = constrain(x1, 0, doc.canvas.width);
+    y1 = constrain(y1, 0, doc.canvas.height);
+    x2 = constrain(x2, 0, doc.canvas.width);
+    y2 = constrain(y2, 0, doc.canvas.height);
 
     int w = x2 - x1;
     int h = y2 - y1;

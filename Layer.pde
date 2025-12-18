@@ -56,7 +56,7 @@ class LayerStack {
   ArrayList<Layer> list = new ArrayList<Layer>();
   int activeIndex = -1;
 
-
+  
   int getid(){
     return NEXT_ID++;
   }

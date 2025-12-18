@@ -4,6 +4,7 @@ public class App {
   ToolManager tools;
   CommandManager history;
   UI ui;
+  
   /* 五大模块
     Doc：工程文件的唯一真实记录，
     Render：渲染器，从Doc中读取图层信息，显示出画布上的图像
@@ -25,7 +26,6 @@ public class App {
   /*void update() {
    // placeholder for future updates
   }*/
-
   void render() {
     renderer.draw(doc, tools);
     ui.draw(doc, tools, history);
