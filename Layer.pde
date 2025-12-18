@@ -18,7 +18,7 @@ class Layer {
   // Pivot in LOCAL space (image space)
   float pivotX = 0;
   float pivotY = 0;
-
+  
   Layer(PImage img,int id) {
     this.ID=id;
     this.img = img;
