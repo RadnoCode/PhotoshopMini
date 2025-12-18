@@ -1,4 +1,4 @@
-class Renderer {
+class Renderer{
   
   void drawChecker(int w, int h, int s) {
     noStroke();
@@ -55,9 +55,9 @@ class Renderer {
     textSize(12);
     text("Shortcuts: O Open | M Move | C Crop | Ctrl/Cmd+Z Undo | Ctrl/Cmd+Y Redo", 12, height - 12);
   }
-
-
 }
+
+
 class RenderFlags {
   boolean dirtyComposite = true;
 }

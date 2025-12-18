@@ -1,4 +1,4 @@
-class App {
+public class App {
   Document doc;
   Renderer renderer;
   ToolManager tools;
@@ -24,7 +24,7 @@ class App {
 
   /*void update() {
    // placeholder for future updates
-   }*/
+  }*/
 
   void render() {
     renderer.draw(doc, tools);
@@ -63,6 +63,11 @@ class App {
     }
     if (ctrl && (k=='y' || k=='Y')) {
       history.redo(doc);
+      return;
+    }
+    
+    if(k==DELETE||(ctrl&&(k==BACKSPACE))||k==BACKSPACE){
+      ui.layerListPanel.deleteSelectedLayer();
       return;
     }
 

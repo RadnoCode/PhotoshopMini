@@ -40,66 +40,125 @@ class CommandManager {
   }
 }
 
-class AddLayerCommand implements Command{
-  Layer l;
+class AddLayerCommand implements Command {
+  Layer layer;
   int index;
-  AddLayerCommand(Document doc,Layer tar){
-    this.l=tar;
-    this.index = doc.layers.list.size();
+
+  AddLayerCommand(Layer layer, int index) {
+    this.layer = layer;
+    this.index = index;
   }
-  void execute(Document doc){
-    doc.layers.insertAt(index, l);
-    // keep the chosen slot for redo even if layers move later
-    index = doc.layers.indexOf(l);
+
+  public void execute(Document doc) {
+    doc.layers.insertAt(index, layer);
+    doc.layers.activeIndex = doc.layers.indexOf(layer);
+    doc.renderFlags.dirtyComposite = true;
   }
-  void undo(Document doc){
-    int currentIndex = doc.layers.indexOf(l);
-    if (currentIndex >= 0) {
-      doc.layers.removeAt(currentIndex);
-    }
+
+  public void undo(Document doc) {
+    int i = doc.layers.indexOf(layer);
+    if (i >= 0) doc.layers.removeAt(i);
+    doc.renderFlags.dirtyComposite = true;
   }
-  String name(){
-    return "Add Layer";
-  }
+
+  public String name() { return "Add Layer"; }
 }
 
-class RemoveLayerCommand implements Command{
-  Layer l=null;
-  int index;
-  RemoveLayerCommand(Document doc,Layer tar){
-    this.l=tar;
-    index=doc.layers.indexOf(l);
+
+class RemoveLayerCommand implements Command {
+  Layer layer;
+  int index = -1;
+
+  RemoveLayerCommand(Layer layer) {
+    this.layer = layer;
   }
-  void execute(Document doc){
-  if (l == null) return;
+
+  public void execute(Document doc) {
+    index = doc.layers.indexOf(layer);
+    if (index < 0) return;
     doc.layers.removeAt(index);
+    doc.renderFlags.dirtyComposite = true;
   }
-  void undo(Document doc){
-    doc.layers.insertAt(index,l);
+
+  public void undo(Document doc) {
+    if (index < 0) return;
+    doc.layers.insertAt(index, layer);
+    doc.layers.activeIndex = doc.layers.indexOf(layer);
+    doc.renderFlags.dirtyComposite = true;
   }
-  String name(){
-    return "Remove Layer";
-  }
+
+  public String name() { return "Remove Layer"; }
 }
 
-class MoveLayerCommand implements Command{
-  Layer l;
-  int start,end;
-  MoveLayerCommand(Document doc,int start,int end){
-    this.start=start;
-    this.end=end;
-    this.l=doc.layers.list.get(start);
+class ToggleVisibleCommand implements Command {
+  Layer layer;
+  boolean before, after;
+
+  ToggleVisibleCommand(Layer layer) {
+    this.layer = layer;
+    this.before = layer.visible;
+    this.after  = !layer.visible;
   }
-  void execute(Document doc){
-    doc.layers.move(start,end);
+
+  public void execute(Document doc) {
+    layer.visible = after;
+    doc.renderFlags.dirtyComposite = true;
   }
-  void undo(Document doc){
-    doc.layers.move(end,start);
+
+  public void undo(Document doc) {
+    layer.visible = before;
+    doc.renderFlags.dirtyComposite = true;
   }
-  String name(){
-    return "Move Layer";
-  }
+
+  public String name() { return "Toggle Visibility"; }
 }
+
+
+class MoveLayerCommand implements Command {
+  Layer layer;
+  int from, toIndex;
+
+  MoveLayerCommand(Layer layer, int from, int toIndex) {
+    this.layer = layer;
+    this.from = from;
+    this.toIndex = toIndex;
+  }
+
+  public void execute(Document doc) {
+    // 保险：执行时再找一次 layer 当前 index，避免外界变动
+    int cur = doc.layers.indexOf(layer);
+    if (cur < 0) return;
+    doc.layers.move(cur, toIndex);
+    doc.layers.activeIndex = doc.layers.indexOf(layer);
+    doc.renderFlags.dirtyComposite = true;
+  }
+
+  public void undo(Document doc) {
+    int cur = doc.layers.indexOf(layer);
+    if (cur < 0) return;
+    doc.layers.move(cur, from);
+    doc.layers.activeIndex = doc.layers.indexOf(layer);
+    doc.renderFlags.dirtyComposite = true;
+  }
+
+  public String name() { return "Move Layer"; }
+}
+
+class RenameLayerCommand implements Command {
+  Layer layer;
+  String before, after;
+
+  RenameLayerCommand(Layer layer, String afterName) {
+    this.layer = layer;
+    this.before = layer.name;
+    this.after  = afterName;
+  }
+
+  public void execute(Document doc) { layer.name = after; }
+  public void undo(Document doc) { layer.name = before; }
+  public String name() { return "Rename Layer"; }
+}
+
 
 class RotateCommand implements Command{
   Layer layer;
@@ -140,7 +199,7 @@ class ScaleCommand implements Command{
   }
 }
 
-// ---------- CropCommand (stores before snapshot for undo) ----------
+// ---------- CropCommand (stoIndexres before snapshot for undo) ----------
 class CropCommand implements Command {
   IntRect rect;
 
@@ -176,7 +235,7 @@ class CropCommand implements Command {
 
     Layer layer = doc.layers.getActive();
     if (layer == null) {
-      layer = new Layer(beforeImg.get());
+      layer = new Layer(beforeImg.get(),doc.layers.getid());
       doc.layers.setSingleLayer(layer);
     } else {
       layer.img = beforeImg.get();

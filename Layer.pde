@@ -1,4 +1,6 @@
 class Layer {
+  
+  final int ID;
   PImage img = null;
   float opacity = 1.0;
   boolean visible = true;
@@ -17,7 +19,8 @@ class Layer {
   float pivotX = 0;
   float pivotY = 0;
 
-  Layer(PImage img) {
+  Layer(PImage img,int id) {
+    this.ID=id;
     this.img = img;
     if (img != null) {
       pivotX = img.width * 0.5;
@@ -40,20 +43,33 @@ class Layer {
   PVector pivotCanvas() {
     return new PVector(x + pivotX, y + pivotY);
   }
+  String toString(){
+    return name;
+  } 
 
 
 }
 
 class LayerStack {
+  int NEXT_ID=1;
   ArrayList<Layer> list = new ArrayList<Layer>();
   int activeIndex = -1;
 
+
+  int getid(){
+    return NEXT_ID++;
+  }
   Layer getActive() {
     if (activeIndex < 0 || activeIndex >= list.size()) return null;
     return list.get(activeIndex);//返回下标为activeIndex的那一个
   }
   int indexOf(Layer l) { return list.indexOf(l); }
-  
+
+  int indexOfId(int id) {
+    for (int i = 0; i < list.size(); i++) if (list.get(i).ID == id) return i;
+    return -1;
+  }
+
   void insertAt(int idx, Layer l){
     idx = constrain(idx, 0, list.size());
 
