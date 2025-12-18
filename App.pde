@@ -29,7 +29,7 @@ public class App {
   void render() {
     renderer.draw(doc, tools);
     ui.draw(doc, tools, history);
-  }//画图和UI
+  }//darw concavs and UI
 
   // ---------- event routing ----------
 

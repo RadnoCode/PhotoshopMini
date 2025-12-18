@@ -114,16 +114,28 @@ class UI {
     PImage img = loadImage(selection.getAbsolutePath());
     if (img == null) return;
 
-    // set doc content
-    Layer l=new Layer(img,doc.layers.getid());
-    l.name = "Layer " + (doc.layers.list.size() + 1);
-    doc.layers.list.add(l);
-    doc.layers.activeIndex=doc.layers.indexOf(l);
+    Layer active = doc.layers.getActive();
+    boolean canReuseActive = active != null && active.empty;
 
-    // reset view (optional)
-    doc.view.zoom = 1.0;
-    doc.view.panX = 80;
-    doc.view.panY = 50;
+    if (canReuseActive) {
+      active.img = img;
+      active.empty=false;
+      active.visible = true;
+      active.x = 0;
+      active.y = 0;
+      active.rotation = 0;
+      active.scale = 1.0;
+      active.pivotX = img.width * 0.5;
+      active.pivotY = img.height * 0.5;
+      doc.layers.activeIndex = doc.layers.indexOf(active);
+    } else {
+      Layer l = new Layer(img, doc.layers.getid());
+      l.name = "Layer " + l.ID;
+      l.empty=false;
+      l.visible = true;
+      doc.layers.list.add(l);
+      doc.layers.activeIndex = doc.layers.indexOf(l);
+    }
 
     doc.renderFlags.dirtyComposite = true;
     layerListPanel.refresh(doc);

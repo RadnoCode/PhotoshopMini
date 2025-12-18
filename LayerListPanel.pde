@@ -65,7 +65,7 @@ class LayerListPanel {
           return;
         }
 
-        // 双击重命名（先用对话框，后续你再升级成“行内编辑框”）
+        // double click to rename
         if (e.getClickCount() == 2) {
           String newName = JOptionPane.showInputDialog(container, "Rename layer:", layer.name);
           if (newName != null) {
@@ -178,7 +178,6 @@ class LayerListPanel {
       sourceIndex = list.getSelectedIndex();
       Layer layer = list.getSelectedValue();
       println("起点："+sourceIndex);
-      // 传个“无意义字符串”也行，真正信息我们用 sourceIndex + layer 引用
       return new StringSelection(layer == null ? "" : ("" + layer.ID));
     }
 

@@ -2,6 +2,7 @@ class Layer {
   
   final int ID;
   PImage img = null;
+  boolean empty=true;
   float opacity = 1.0;
   boolean visible = true;
   String name = "Layer";
