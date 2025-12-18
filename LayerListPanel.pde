@@ -4,6 +4,7 @@ class LayerListPanel {
   int rightPanelX;
   int panelWidth;
   int topY;
+  boolean isRefreshing = false;
 
   DefaultListModel<Layer> model = new DefaultListModel<Layer>();
   JList<Layer> list = new JList<Layer>(model);
@@ -33,15 +34,16 @@ class LayerListPanel {
 
     list.setDragEnabled(true);
     list.setDropMode(DropMode.INSERT);
+    list.setAutoscrolls(true);
     list.setTransferHandler(new ReorderHandler());
     list.setBackground(new Color(55, 55, 55));
     list.setForeground(Color.WHITE);
     list.setBorder(BorderFactory.createEmptyBorder(4, 6, 4, 6));
     list.addListSelectionListener(e -> {
-      if (!e.getValueIsAdjusting()) {
-        int idx = list.getSelectedIndex();
-        doc.layers.activeIndex = idx;
-      }
+      if (isRefreshing || e.getValueIsAdjusting()) return;
+      int idx = list.getSelectedIndex();
+      int docIdx = viewToDocIndex(idx);
+      doc.layers.activeIndex = docIdx;
     });
   
     
@@ -93,6 +95,7 @@ class LayerListPanel {
     scrollPane.getViewport().setBackground(new Color(45, 45, 45));
     scrollPane.setBackground(new Color(45, 45, 45));
   }
+
   void configureHeader() {
     JPanel header = new JPanel(new BorderLayout());
     header.setOpaque(false);
@@ -130,15 +133,18 @@ class LayerListPanel {
 
   void refresh(Document updatedDoc) {
     this.doc = updatedDoc;
+    isRefreshing = true;
 
     model.clear();
-    for (Layer l : updatedDoc.layers.list) model.addElement(l);
+    ArrayList<Layer> layers = updatedDoc.layers.list;
+    for (int i = layers.size() - 1; i >= 0; i--) model.addElement(layers.get(i));
 
-    int active = updatedDoc.layers.activeIndex;
-    if (active >= 0 && active < model.getSize()) list.setSelectedIndex(active);
+    int viewIdx = docToViewIndex(updatedDoc.layers.activeIndex);
+    if (viewIdx >= 0) list.setSelectedIndex(viewIdx);
     else list.clearSelection();
 
     list.repaint();
+    isRefreshing = false;
   }
 
   void addBlankLayer() {
@@ -163,7 +169,7 @@ class LayerListPanel {
     refresh(doc);
   }
 
-  class ReorderHandler extends TransferHandler {
+    class ReorderHandler extends TransferHandler {
     int sourceIndex = -1;
 
     public int getSourceActions(JComponent c) { return MOVE; }
@@ -171,6 +177,7 @@ class LayerListPanel {
     protected Transferable createTransferable(JComponent c) {
       sourceIndex = list.getSelectedIndex();
       Layer layer = list.getSelectedValue();
+      println("起点："+sourceIndex);
       // 传个“无意义字符串”也行，真正信息我们用 sourceIndex + layer 引用
       return new StringSelection(layer == null ? "" : ("" + layer.ID));
     }
@@ -183,14 +190,25 @@ class LayerListPanel {
       JList.DropLocation dl = (JList.DropLocation) support.getDropLocation();
       int target = dl.getIndex();
 
-      if (sourceIndex < 0) return false;
-      if (target == sourceIndex) return false;
-      if (target < 0) target = model.getSize() - 1;
+      if (target < 0) target = model.getSize();
+      // 夹紧到 [0, size]
+      target = Math.max(0, Math.min(target, model.getSize()));
+      // 从前往后拖：移除 source 后插入点左移 1
+      if (target > sourceIndex) target--;
+
+      println(sourceIndex+" "+target);
 
       Layer layer = model.getElementAt(sourceIndex);
-      app.history.perform(doc, new MoveLayerCommand(layer, sourceIndex, target));
+
+      int sourceDocIndex = viewToDocIndex(sourceIndex);
+      int targetDocIndex = viewToDocIndex(target);
+      if (sourceDocIndex < 0 || targetDocIndex < 0) return false;
+
+      app.history.perform(doc, new MoveLayerCommand(layer, sourceDocIndex, targetDocIndex));
+
       refresh(doc);
-      list.setSelectedIndex(doc.layers.indexOf(layer));
+      int viewIdx = docToViewIndex(doc.layers.indexOf(layer));
+      if (viewIdx >= 0) list.setSelectedIndex(viewIdx);
       return true;
     }
   }
@@ -202,21 +220,25 @@ class LayerListPanel {
     int eyeW;
     JLabel eyeLabel = new JLabel("", SwingConstants.CENTER);
     JLabel nameLabel = new JLabel("");
+    JLabel indexLabel = new JLabel("");
 
     LayerCellRenderer(int eyeW) {
       this.eyeW = eyeW;
       setLayout(new BorderLayout());
       setBorder(BorderFactory.createEmptyBorder(2, 2, 2, 2));
       setOpaque(true);
-
+      
       eyeLabel.setPreferredSize(new Dimension(eyeW, 22));
       eyeLabel.setForeground(Color.WHITE);
 
       nameLabel.setForeground(Color.WHITE);
       nameLabel.setBorder(BorderFactory.createEmptyBorder(0, 6, 0, 0));
 
+      indexLabel.setForeground(Color.WHITE);
+
       add(eyeLabel, BorderLayout.WEST);
       add(nameLabel, BorderLayout.CENTER);
+      add(indexLabel,BorderLayout.EAST);
     }
 
     public Component getListCellRendererComponent(
@@ -225,11 +247,24 @@ class LayerListPanel {
     ) {
       eyeLabel.setText(layer.visible ? "👁" : "×");
       nameLabel.setText(layer.name);
+      indexLabel.setText(String.valueOf(doc.layers.indexOf(layer)));
 
       Color bg = isSelected ? new Color(80, 80, 80) : list.getBackground();
       setBackground(bg);
 
       return this;
     }
+  }
+
+  int docToViewIndex(int docIndex) {
+    int size = doc.layers.list.size();
+    if (docIndex < 0 || docIndex >= size) return -1;
+    return size - 1 - docIndex;
+  }
+
+  int viewToDocIndex(int viewIndex) {
+    int size = doc.layers.list.size();
+    if (viewIndex < 0 || viewIndex >= size) return -1;
+    return size - 1 - viewIndex;
   }
 }

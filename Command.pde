@@ -127,6 +127,7 @@ class MoveLayerCommand implements Command {
   public void execute(Document doc) {
     // 保险：执行时再找一次 layer 当前 index，避免外界变动
     int cur = doc.layers.indexOf(layer);
+    println("cur"+cur);
     if (cur < 0) return;
     doc.layers.move(cur, toIndex);
     doc.layers.activeIndex = doc.layers.indexOf(layer);

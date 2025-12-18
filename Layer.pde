@@ -88,19 +88,28 @@ class LayerStack {
     return removed;
   }
 
-  void move(int start, int end){
+void move(int start, int end){
     if (start == end) return;
     if (start < 0 || start >= list.size()) return;
-    end = constrain(end, 0, list.size()-1);
 
+    int size = list.size();
+    // end is an insertion index in the original list, so allow "size" to mean
+    // append to the end.
+    end = constrain(end, 0, size);
     Layer l = list.remove(start);
+    // After removal, indices shift left for elements after "start". If the
+    // target was after the source, shift it back by one so the element lands
+    // where the user dropped it.
+    end = constrain(end, 0, list.size());
     list.add(end, l);
 
     // activeIndex 维护（常见坑！）
     if (activeIndex == start) activeIndex = end;
-    else if (start < activeIndex && end >= activeIndex) activeIndex--;
-    else if (start > activeIndex && end <= activeIndex) activeIndex++;
+    else if (start < activeIndex && activeIndex <= end) activeIndex--;
+    else if (start > activeIndex && activeIndex >= end) activeIndex++;
   }
+
+
   void renane(Layer tar,String s){
     if(tar==null) return;
     tar.name = s;
