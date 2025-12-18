@@ -1,4 +1,6 @@
 class UI {
+  PApplet parent;
+  Document doc;
   
   int RightpanelW = 270;
   int RightpanelX =width-RightpanelW;
@@ -6,8 +8,11 @@ class UI {
 
 
   UIButton btnOpen, btnMove, btnCrop, btnUndo, btnRedo;
+  LayerListPanel layerListPanel;
 
-  UI() {
+  UI(PApplet parent, Document doc) {
+    this.parent = parent;
+    this.doc = doc;
     int x = RightpanelX + 12;
     int y = 20;
     int w = RightpanelW - 24;
@@ -24,6 +29,8 @@ class UI {
     y += h + gap;
     btnRedo = new UIButton(x, y, w, h, "Redo");
     y += h + gap;
+
+    layerListPanel = new LayerListPanel(parent, doc, RightpanelX, RightpanelW, y);
   }
 
   void draw(Document doc, ToolManager tools, CommandManager history) {
@@ -55,6 +62,9 @@ class UI {
       Layer a = doc.layers.getActive();
       text("Image: " + a.img.width + "x" + a.img.height, RightpanelX + 12, height - 95);
     }
+
+    layerListPanel.refresh(doc);
+    layerListPanel.updateLayout(RightpanelX, RightpanelW, height);
   }
 
   boolean handleMousePressed(App app, int mx, int my, int btn) {
@@ -105,7 +115,8 @@ class UI {
     if (img == null) return;
 
     // set doc content
-    Layer l=new Layer(img);
+    Layer l=new Layer(img,doc.layers.getid());
+    l.name = "Layer " + (doc.layers.list.size() + 1);
     doc.layers.list.add(l);
     doc.layers.activeIndex=doc.layers.indexOf(l);
 
@@ -115,12 +126,13 @@ class UI {
     doc.view.panY = 50;
 
     doc.renderFlags.dirtyComposite = true;
+    layerListPanel.refresh(doc);
   }
 }
 class UIButton {
   int x, y, w, h;
   String label;
-
+  
   UIButton(int x, int y, int w, int h, String label) {
     this.x=x;
     this.y=y;

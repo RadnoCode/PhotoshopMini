@@ -1,4 +1,6 @@
 class Layer {
+  
+  final int ID;
   PImage img = null;
   float opacity = 1.0;
   boolean visible = true;
@@ -16,8 +18,9 @@ class Layer {
   // Pivot in LOCAL space (image space)
   float pivotX = 0;
   float pivotY = 0;
-
-  Layer(PImage img) {
+  
+  Layer(PImage img,int id) {
+    this.ID=id;
     this.img = img;
     if (img != null) {
       pivotX = img.width * 0.5;
@@ -40,20 +43,33 @@ class Layer {
   PVector pivotCanvas() {
     return new PVector(x + pivotX, y + pivotY);
   }
+  String toString(){
+    return name;
+  } 
 
 
 }
 
 class LayerStack {
+  int NEXT_ID=1;
   ArrayList<Layer> list = new ArrayList<Layer>();
   int activeIndex = -1;
 
+
+  int getid(){
+    return NEXT_ID++;
+  }
   Layer getActive() {
     if (activeIndex < 0 || activeIndex >= list.size()) return null;
     return list.get(activeIndex);//返回下标为activeIndex的那一个
   }
   int indexOf(Layer l) { return list.indexOf(l); }
-  
+
+  int indexOfId(int id) {
+    for (int i = 0; i < list.size(); i++) if (list.get(i).ID == id) return i;
+    return -1;
+  }
+
   void insertAt(int idx, Layer l){
     idx = constrain(idx, 0, list.size());
 
@@ -72,18 +88,31 @@ class LayerStack {
     return removed;
   }
 
-  void move(int start, int end){
+void move(int start, int end){
     if (start == end) return;
     if (start < 0 || start >= list.size()) return;
-    end = constrain(end, 0, list.size()-1);
 
+    int size = list.size();
+    // end is an insertion index in the original list, so allow "size" to mean
+    // append to the end.
+    end = constrain(end, 0, size);
     Layer l = list.remove(start);
+    // After removal, indices shift left for elements after "start". If the
+    // target was after the source, shift it back by one so the element lands
+    // where the user dropped it.
+    end = constrain(end, 0, list.size());
     list.add(end, l);
 
     // activeIndex 维护（常见坑！）
     if (activeIndex == start) activeIndex = end;
-    else if (start < activeIndex && end >= activeIndex) activeIndex--;
-    else if (start > activeIndex && end <= activeIndex) activeIndex++;
+    else if (start < activeIndex && activeIndex <= end) activeIndex--;
+    else if (start > activeIndex && activeIndex >= end) activeIndex++;
+  }
+
+
+  void renane(Layer tar,String s){
+    if(tar==null) return;
+    tar.name = s;
   }
 
   void setSingleLayer(Layer layer) {

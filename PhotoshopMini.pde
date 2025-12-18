@@ -1,4 +1,9 @@
 import java.awt.*;
+import java.awt.event.*;
+import java.awt.datatransfer.*;
+import javax.swing.*;
+import javax.swing.event.*;
+import processing.awt.PSurfaceAWT;
 
 App app;
 
@@ -19,7 +24,7 @@ void settings() {
 
 void setup() {
   surface.setTitle("Crop Demo - Command startYstem (Single File)");
-  app = new App();
+  app = new App(this);
 }
 
 void draw() {
@@ -37,7 +42,7 @@ void mouseDragged() {
 void mouseReleased() {
   app.onMouseReleased(mouseX, mouseY, mouseButton);
 }
-void mouseWheel(MouseEvent event) {
+void mouseWheel(processing.event.MouseEvent event) {
   app.onMouseWheel(event.getCount());
 }
 void keyPressed() {

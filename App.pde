@@ -1,4 +1,4 @@
-class App {
+public class App {
   Document doc;
   Renderer renderer;
   ToolManager tools;
@@ -11,12 +11,12 @@ class App {
     UI：基本节目图像，以及一些可以发送给CommandM的指令。
     CommandManger：管理Command记录，发出更改Doc的指令
    */
-  App() {
+  App(PApplet parent) {
     doc = new Document();
     renderer = new Renderer();
     tools = new ToolManager();
     history = new CommandManager();
-    ui = new UI();
+    ui = new UI(parent, doc);
 
     tools.setTool(new MoveTool()); // When you enter, defualtly choose MoveTool 默认移动工具
   }// 生成函数，新建五大模块
@@ -24,7 +24,7 @@ class App {
 
   /*void update() {
    // placeholder for future updates
-   }*/
+  }*/
 
   void render() {
     renderer.draw(doc, tools);
@@ -65,6 +65,11 @@ class App {
       history.redo(doc);
       return;
     }
+    
+    if(k==DELETE||(ctrl&&(k==BACKSPACE))||k==BACKSPACE){
+      ui.layerListPanel.deleteSelectedLayer();
+      return;
+    }
 
     if (k=='o' || k=='O') {
       ui.openFileDialog();
@@ -90,10 +95,3 @@ class App {
   }
 }
 
-class CanvasSpec {// Canvas Statement
-  int w, h;
-  CanvasSpec(int w, int h) {
-    this.w = w;
-    this.h = h;
-  }
-}

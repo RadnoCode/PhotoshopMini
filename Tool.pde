@@ -166,6 +166,7 @@ class CropTool implements Tool {
   CommandManager history;
 
   boolean dragging = false;
+
   float startX, startY, endX, endY; // in canvas coords
 
   CropTool(CommandManager history) {
@@ -177,8 +178,8 @@ class CropTool implements Tool {
   public void mousePressed(Document doc, int mx, int my, int btn) {
     if (btn != LEFT) return;
     if (doc.layers.getActive() == null || doc.layers.getActive().img == null) return;
-
     dragging = true;
+    
     startX = doc.view.screenToCanvasX(mx);
     startY = doc.view.screenToCanvasY(my);
     endX = startX;
