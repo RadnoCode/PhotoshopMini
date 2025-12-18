@@ -95,10 +95,3 @@ public class App {
   }
 }
 
-class CanvasSpec {// Canvas Statement
-  int w, h;
-  CanvasSpec(int w, int h) {
-    this.w = w;
-    this.h = h;
-  }
-}
