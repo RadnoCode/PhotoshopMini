@@ -12,3 +12,11 @@ public class Document {
     // start with an empty doc (no layers yet)
   }
 }
+
+class CanvasSpec {// Canvas Statement
+  int w, h;
+  CanvasSpec(int w, int h) {
+    this.w = w;
+    this.h = h;
+  }
+}
