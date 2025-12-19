@@ -14,12 +14,51 @@ class Renderer{
       }
     }
   }// 棋盘格
-  
+  void drawCanvas(Document doc,ToolManager tools){
+    PGraphics pg=doc.canvas;
+    pg.beginDraw();
+    pg.clear();
+    pg.stroke(255,0,0);
+    pg.clip(doc.viewX, doc.viewY, doc.viewW, doc.viewH);
+
+
+    for(int i=0;i<doc.layers.list.size();i++){
+      Layer l=doc.layers.list.get(i);
+      if(l==null||l.visible==false||(l.img==null)){
+        continue;
+      }
+      pg.pushMatrix();
+
+      pg.translate(l.x,l.y);
+      pg.translate(l.pivotX,l.pivotY);
+      pg.rotate(l.rotation);
+      pg.scale(l.scale);
+
+      pg.tint(255,255*l.opacity);
+      pg.image(l.img,-l.pivotX,-l.pivotY);
+      pg.noTint();
+      pg.popMatrix();
+      
+    }
+    pg.noClip();
+
+    pg.endDraw();
+  }
+  void drawToScreen(Document doc,ToolManager tools){
+    pushMatrix();
+    doc.view.applyTransform();
+    image(doc.canvas,0,0);
+    tools.drawOverlay(doc);
+    popMatrix();
+
+
+  }
+  /*
   void draw(Document doc, ToolManager tools) {
     pushMatrix();
     doc.view.applyTransform();
 
-    drawChecker(doc.canvas.width, doc.canvas.height, 20);
+    drawChecker(pg.width, pg.height, 20);
 
     for(int i = 0; i < doc.layers.list.size(); i++){
       Layer l=doc.layers.list.get(i);
@@ -33,21 +72,11 @@ class Renderer{
       noTint();
       popMatrix();
     }
-    /*draw active layer only (MVP)
-    Layer active = doc.layers.getActive();
-    if (active != null && active.img != null && active.visible) { 
-      pushMatrix();
-      active.applyTransform();
-      tint(255, 255 * active.opacity);
-      image(active.img, 0, 0);
-      noTint();
-      popMatrix();
-    }*/
 
     // canvas border
     noFill();
     stroke(200);
-    rect(0, 0, doc.canvas.width, doc.canvas.height);
+    rect(0, 0, pg.width, pg.height);
 
     // tool overlay in canvas coords
     tools.drawOverlay(doc);
@@ -58,7 +87,7 @@ class Renderer{
     fill(200);
     textSize(12);
     text("Shortcuts: O Open | M Move | C Crop | Ctrl/Cmd+Z Undo | Ctrl/Cmd+Y Redo", 12, height - 12);
-  }
+  }*/
 }
 
 

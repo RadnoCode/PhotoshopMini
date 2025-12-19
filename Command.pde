@@ -172,6 +172,7 @@ class RotateCommand implements Command{
   }
   void execute(Document doc){
     layer.rotation=after;
+    println("rotation: "+after);
   }
   void undo(Document doc){
     layer.rotation=before;
@@ -203,48 +204,32 @@ class ScaleCommand implements Command{
 
 // ---------- CropCommand (stoIndexres before snapshot for undo) ----------
 class CropCommand implements Command {
-  IntRect rect;
+  int x,y,w,h;
+  int befx,befy,befw,befh;
 
-  // undo snapshot (MVP: whole active layer + canvas size)
-  PImage beforeImg;
-  int beforeW, beforeH;
 
-  CropCommand(IntRect rect) {
-    this.rect = rect;
+  CropCommand(Document doc,int x,int y,int w,int h) {
+    this.x=x;this.y=y;this.w=w;this.h=h;
+    this.befx=doc.viewX;this.befy=doc.viewY;this.befw=doc.viewW;this.befh=doc.viewH;
   }
 
   public void execute(Document doc) {
-    Layer layer = doc.layers.getActive();
-    if (layer == null || layer.img == null) return;
-
-    // snapshot once (important for redo correctness)
-    if (beforeImg == null) {
-      beforeImg = layer.img.get();
-      beforeW = doc.canvas.width;
-      beforeH = doc.canvas.height;
-    }
+    if(x<befx||y<befy||x+w>befx+befw||y+h>befy+befh) return ;// Todo: warning for illeagal 
 
     // apply crop
-    PImage cropped = layer.img.get(rect.x, rect.y, rect.w, rect.h);
-    layer.img = cropped;
-    doc.canvas.height = cropped.height;
-    doc.canvas.width = cropped.width;
+    doc.viewX=x;
+    doc.viewY=y;
+    doc.viewH=h;
+    doc.viewW=w;
+
     doc.renderFlags.dirtyComposite = true;
   }
 
   public void undo(Document doc) {
-    if (beforeImg == null) return;
-
-    Layer layer = doc.layers.getActive();
-    if (layer == null) {
-      layer = new Layer(beforeImg.get(),doc.layers.getid());
-      doc.layers.setSingleLayer(layer);
-    } else {
-      layer.img = beforeImg.get();
-    }
-
-    doc.canvas.width = beforeW;
-    doc.canvas.height = beforeH;
+    doc.viewX=befx;
+    doc.viewY=befy;
+    doc.viewW=befw;
+    doc.viewH = befh;
 
     doc.renderFlags.dirtyComposite = true;
   }

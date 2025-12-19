@@ -3,6 +3,24 @@ class ViewState {
   float panX = 80;
   float panY = 50;
 
+  public void setFit(Document doc){
+    float winW = width;
+    float winH = height;
+
+    float canvasW = doc.canvas.width;
+    float canvasH = doc.canvas.height;
+
+    float scaleW = winW / canvasW;
+    float scaleH = winH / canvasH;
+    float s = min(scaleW, scaleH) * 0.9;
+
+    float offsetX = (winW - canvasW * s) / 2;
+    float offsetY = (winH - canvasH * s) / 2;
+
+    doc.view.zoom = s;
+    doc.view.panX = offsetX;
+    doc.view.panY = offsetY;
+  }
   void applyTransform() {
     translate(panX, panY);
     scale(zoom);

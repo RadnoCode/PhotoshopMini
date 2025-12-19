@@ -4,6 +4,7 @@ public class App {
   ToolManager tools;
   CommandManager history;
   UI ui;
+
   
   /* 五大模块
     Doc：工程文件的唯一真实记录，
@@ -27,7 +28,8 @@ public class App {
    // placeholder for future updates
   }*/
   void render() {
-    renderer.draw(doc, tools);
+    renderer.drawCanvas(doc, tools);
+    renderer.drawToScreen(doc,tools);
     ui.draw(doc, tools, history);
   }//darw concavs and UI
 

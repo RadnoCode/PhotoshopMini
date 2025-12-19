@@ -25,6 +25,9 @@ void settings() {
 void setup() {
   surface.setTitle("Crop Demo - Command startYstem (Single File)");
   app = new App(this);
+  app.doc.view.setFit(app.doc);
+
+
 }
 
 void draw() {
