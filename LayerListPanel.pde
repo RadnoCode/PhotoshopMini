@@ -94,6 +94,19 @@ class LayerListPanel {
     scrollPane.setBorder(BorderFactory.createLineBorder(new Color(70, 70, 70)));
     scrollPane.getViewport().setBackground(new Color(45, 45, 45));
     scrollPane.setBackground(new Color(45, 45, 45));
+
+    // 添加列表选择监听
+  list.addListSelectionListener(e -> {
+    if (!e.getValueIsAdjusting()) { // 避免点击过程中触发两次
+      Layer selected = list.getSelectedValue();
+      if (selected != null) {
+        // 更新文档的当前激活索引
+        doc.layers.activeIndex = list.getSelectedIndex();
+        // 关键：调用 UI 的更新方法
+        app.ui.updatePropertiesFromLayer(selected);
+      }
+    }
+  });
   }
 
   void configureHeader() {

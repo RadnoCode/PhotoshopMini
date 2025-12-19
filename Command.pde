@@ -253,3 +253,57 @@ class CropCommand implements Command {
     return "Crop";
   }
 }
+
+class MoveCommand implements Command {
+  Layer target;
+  float oldX, oldY, newX, newY;
+
+  MoveCommand(Layer l, float nx, float ny) {
+    this.target = l;
+    this.oldX = l.x; 
+    this.oldY = l.y;
+    this.newX = nx;  
+    this.newY = ny;
+  }
+
+  public void execute(Document doc) {
+    target.x = newX;
+    target.y = newY;
+    doc.markChanged(); // 标记画布需要重绘
+  }
+
+  public void undo(Document doc) {
+    target.x = oldX;
+    target.y = oldY;
+    doc.markChanged();
+  }
+
+  public String name() { 
+    return "Manual Move"; 
+  }
+}
+
+class OpacityCommand implements Command {
+  Layer target;
+  float oldOp, newOp;
+
+  OpacityCommand(Layer l, float sliderValue) {
+    this.target = l;
+    this.oldOp = l.opacity;
+    // 将 0-255 映射到 0.0-1.0
+    this.newOp = sliderValue / 255.0;
+  }
+
+  public void execute(Document doc) {
+    target.opacity = newOp;
+    // 关键：通知渲染器画面已脏，需要重新合成
+    doc.renderFlags.dirtyComposite = true;
+  }
+
+  public void undo(Document doc) {
+    target.opacity = oldOp;
+    doc.renderFlags.dirtyComposite = true;
+  }
+
+  public String name() { return "Change Opacity"; }
+}

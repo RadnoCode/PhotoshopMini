@@ -1,4 +1,8 @@
 class Renderer{
+
+  Renderer() {
+    // 默认构造方法为空，但是避免误认还是补充上了
+  }
   
   void drawChecker(int w, int h, int s) {
     noStroke();
@@ -17,14 +21,14 @@ class Renderer{
 
     drawChecker(doc.canvas.width, doc.canvas.height, 20);
 
-    for(int i=0;i<doc.layers.list.size();i++){
+    for(int i = 0; i < doc.layers.list.size(); i++){
       Layer l=doc.layers.list.get(i);
       if(l==null||l.img==null||l.visible==false){
         continue;
       }
       pushMatrix();
       l.applyTransform();
-      tint(255,255*l.opacity);
+      tint(255, (int)(255 * l.opacity));// 强制类型转换防止语法歧义，并确保分号正确
       image(l.img, 0, 0);
       noTint();
       popMatrix();

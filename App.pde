@@ -17,7 +17,7 @@ public class App {
     renderer = new Renderer();
     tools = new ToolManager();
     history = new CommandManager();
-    ui = new UI(parent, doc);
+    ui = new UI(parent, doc, this);
 
     tools.setTool(new MoveTool()); // When you enter, defualtly choose MoveTool 默认移动工具
   }// 生成函数，新建五大模块
@@ -47,6 +47,7 @@ public class App {
   void onMouseReleased(int mx, int my, int btn) {
     if (ui.handleMouseReleased(this, mx, my, btn)) return;
     tools.mouseReleased(doc, mx, my, btn);
+    ui.layerListPanel.refresh(doc); // 在鼠标释放时刷新图层列表
   }
 
   void onMouseWheel(float delta) {

@@ -1,18 +1,28 @@
 class UI {
+  App app;      // 持有对 App 的引用
+
+  JSlider sliderOpacity; // 滑动条
+  
   PApplet parent;
   Document doc;
   
   int RightpanelW = 270;
-  int RightpanelX =width-RightpanelW;
-  int LeftPannelW=64;
+  int RightpanelX = width-RightpanelW;
+  int LeftPannelW = 64;
 
+  boolean isUpdatingUI = false; // 新增：标记位，防止循环触发
 
   UIButton btnOpen, btnMove, btnCrop, btnUndo, btnRedo;
   LayerListPanel layerListPanel;
 
-  UI(PApplet parent, Document doc) {
+  JTextField fieldX, fieldY;
+  JPanel propsPanel;
+
+  UI(PApplet parent, Document doc, App app) {
     this.parent = parent;
     this.doc = doc;
+    this.app = app;
+
     int x = RightpanelX + 12;
     int y = 20;
     int w = RightpanelW - 24;
@@ -30,7 +40,11 @@ class UI {
     btnRedo = new UIButton(x, y, w, h, "Redo");
     y += h + gap;
 
+    //初始化图层面板
     layerListPanel = new LayerListPanel(parent, doc, RightpanelX, RightpanelW, y);
+
+    // 关键：初始化属性面板并放入 layerListPanel 的容器
+    setupPropertiesPanel(this.layerListPanel.container);
   }
 
   void draw(Document doc, ToolManager tools, CommandManager history) {
@@ -63,7 +77,7 @@ class UI {
       text("Image: " + a.img.width + "x" + a.img.height, RightpanelX + 12, height - 95);
     }
 
-    layerListPanel.refresh(doc);
+    // layerListPanel.refresh(doc);我把这一行代码注释掉进行调试
     layerListPanel.updateLayout(RightpanelX, RightpanelW, height);
   }
 
@@ -140,7 +154,90 @@ class UI {
     doc.renderFlags.dirtyComposite = true;
     layerListPanel.refresh(doc);
   }
+void updatePropertiesFromLayer(Layer l) {
+    if (l == null || fieldX == null || sliderOpacity == null) return;
+    
+    isUpdatingUI = true; 
+    
+    // 同步坐标
+    fieldX.setText(String.valueOf((int)l.x));
+    fieldY.setText(String.valueOf((int)l.y));
+    
+    // 同步透明度滑动条：将 0.0-1.0 还原回 0-255
+    sliderOpacity.setValue((int)(l.opacity * 255));
+    
+    isUpdatingUI = false; 
+  }
+
+  void updateLayerFromUI() {
+    if (isUpdatingUI) return; // 如果是程序自动填写的，不要执行移动指令
+    Layer active = doc.layers.getActive();
+    if (active == null) return;
+    try {
+      float nx = Float.parseFloat(fieldX.getText());
+      float ny = Float.parseFloat(fieldY.getText());
+      app.history.perform(doc, new MoveCommand(active, nx, ny));
+    } catch (Exception e) {
+      updatePropertiesFromLayer(active);
+    }
+  }
+  void setupPropertiesPanel(JPanel container) {
+    // 1. 改为 3 行 2 列以容纳 X, Y, Opacity
+    propsPanel = new JPanel(new GridLayout(3, 2, 5, 5));
+    propsPanel.setBackground(new Color(60, 60, 60));
+
+    // 初始化 X, Y 输入框
+    JLabel labelX = new JLabel(" X:");
+    labelX.setForeground(Color.WHITE);
+    fieldX = new JTextField("0");
+    
+    JLabel labelY = new JLabel(" Y:");
+    labelY.setForeground(Color.WHITE);
+    fieldY = new JTextField("0");
+    
+    container.add(propsPanel, BorderLayout.SOUTH);
+    
+    // 监听回车
+    fieldX.addActionListener(e -> updateLayerFromUI());
+    fieldY.addActionListener(e -> updateLayerFromUI());
+    // --- 新增：透明度部分 ---
+  JLabel labelOp = new JLabel(" Opacity:");
+  labelOp.setForeground(Color.WHITE);
+  // 参数：最小值, 最大值, 当前值
+  sliderOpacity = new JSlider(0, 255, 255);
+  sliderOpacity.setBackground(new Color(60, 60, 60));
+  
+  // 监听滑动条
+  sliderOpacity.addChangeListener(e -> {
+    if (!sliderOpacity.getValueIsAdjusting()) { // 当玩家松开手指时执行命令
+      updateOpacityFromUI();
+    }
+  });
+
+  propsPanel.add(labelX); propsPanel.add(fieldX);
+  propsPanel.add(labelY); propsPanel.add(fieldY);
+  propsPanel.add(labelOp); propsPanel.add(sliderOpacity); // 添加到面板
+  
+  container.add(propsPanel, BorderLayout.SOUTH);
+  
+  fieldX.addActionListener(e -> updateLayerFromUI());
+  fieldY.addActionListener(e -> updateLayerFromUI());
 }
+// 从 UI 更新到图层
+void updateOpacityFromUI() {
+  if (isUpdatingUI) return;
+  Layer active = doc.layers.getActive();
+  if (active == null) return;
+
+  float newOp = sliderOpacity.getValue();
+  app.history.perform(doc, new OpacityCommand(active, newOp));
+}
+}
+  
+
+
+
+
 class UIButton {
   int x, y, w, h;
   String label;
