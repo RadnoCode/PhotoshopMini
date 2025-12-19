@@ -3,13 +3,17 @@ public class Document {
   ViewState view = new ViewState();
   LayerStack layers = new LayerStack();
   RenderFlags renderFlags = new RenderFlags();
+  int viewX,viewY,viewH,viewW;
   
   
   void markChanged(){
     renderFlags.dirtyComposite = true;
   }
   Document() {
-    // start with an empty doc (no layers yet)
+    viewW=canvas.width;
+    viewH=canvas.height;
+    viewX=0;
+    viewY=0;
   }
 }
 

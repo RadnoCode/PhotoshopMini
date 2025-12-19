@@ -198,11 +198,12 @@ class CropTool implements Tool {
 
     endX = doc.view.screenToCanvasX(mx);
     endY = doc.view.screenToCanvasY(my);
-
-    IntRect r = buildClampedRect(doc, startX, startY, endX, endY);
+    int endW=(int)(endX-startX);
+    int endH=(int)(endY-startY);
+    IntRect r = buildClampedRect(doc, (int)startX,(int)startY, endX, endY);
     if (r == null || r.w < 2 || r.h < 2) return;
 
-    history.perform(doc, new CropCommand(r));
+    history.perform(doc, new CropCommand(doc,(int)startX,(int)startY,endW,endH));
   }
 
   public void mouseWheel(Document doc, float delta) {

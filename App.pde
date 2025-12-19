@@ -4,7 +4,7 @@ public class App {
   ToolManager tools;
   CommandManager history;
   UI ui;
-  
+
   
   /* 五大模块
     Doc：工程文件的唯一真实记录，

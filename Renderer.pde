@@ -15,6 +15,9 @@ class Renderer{
     pg.beginDraw();
     pg.clear();
     pg.stroke(255,0,0);
+    pg.clip(doc.viewX, doc.viewY, doc.viewW, doc.viewH);
+
+
     for(int i=0;i<doc.layers.list.size();i++){
       Layer l=doc.layers.list.get(i);
       if(l==null||l.visible==false||(l.img==null)){
@@ -33,6 +36,8 @@ class Renderer{
       pg.popMatrix();
       
     }
+    pg.noClip();
+
     pg.endDraw();
   }
   void drawToScreen(Document doc,ToolManager tools){
