@@ -58,4 +58,8 @@ void fileSelected(File selection) {
   // when a file is selected, the file will be given to app.doc.
 }
 
+// export callback
+void exportSelected(File selection) {
+  if (app != null) app.ui.onExportSelected(app.doc, selection);
+}
 

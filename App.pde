@@ -86,6 +86,10 @@ public class App {
       tools.setTool(new CropTool(history));
       return;
     }
+    if (k=='e' || k=='E') {
+      ui.exportCanvas();
+      return;
+    }
     if (k=='r' || k=='R') {
       tools.setTool(new RotateTool(history));
       return;

@@ -50,7 +50,13 @@ class Layer {
 
 
 }
+/*
+class TextLayer extends Layer{
+  
+  TextLayer(){
 
+  }
+}*/
 class LayerStack {
   int NEXT_ID=1;
   ArrayList<Layer> list = new ArrayList<Layer>();
@@ -89,7 +95,7 @@ class LayerStack {
     return removed;
   }
 
-void move(int start, int end){
+  void move(int start, int end){
     if (start == end) return;
     if (start < 0 || start >= list.size()) return;
 
@@ -109,8 +115,6 @@ void move(int start, int end){
     else if (start < activeIndex && activeIndex <= end) activeIndex--;
     else if (start > activeIndex && activeIndex >= end) activeIndex++;
   }
-
-
   void renane(Layer tar,String s){
     if(tar==null) return;
     tar.name = s;

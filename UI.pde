@@ -1,3 +1,6 @@
+import java.text.SimpleDateFormat;
+import java.util.Date;
+
 class UI {
   App app;      // 持有对 App 的引用
 
@@ -11,8 +14,9 @@ class UI {
   int LeftPannelW = 64;
 
   boolean isUpdatingUI = false; // 新增：标记位，防止循环触发
+  File lastExportDir;
 
-  UIButton btnOpen, btnMove, btnCrop, btnUndo, btnRedo;
+  UIButton btnOpen, btnMove, btnCrop, btnExport, btnUndo, btnRedo;
   LayerListPanel layerListPanel;
 
   JTextField fieldX, fieldY;
@@ -35,6 +39,8 @@ class UI {
     y += h + gap;
     btnCrop = new UIButton(x, y, w, h, "Crop (C)");
     y += h + gap;
+    btnExport = new UIButton(x, y, w, h, "Export (E)");
+    y += h + gap;
     btnUndo = new UIButton(x, y, w, h, "Undo");
     y += h + gap;
     btnRedo = new UIButton(x, y, w, h, "Redo");
@@ -45,6 +51,13 @@ class UI {
 
     // 关键：初始化属性面板并放入 layerListPanel 的容器
     setupPropertiesPanel(this.layerListPanel.container);
+
+    // 默认导出目录：优先桌面，找不到则放到工程目录下的 exports
+    lastExportDir = new File(System.getProperty("user.home"), "Desktop");
+    if (!lastExportDir.exists() || !lastExportDir.isDirectory()) {
+      lastExportDir = new File(parent.sketchPath("exports"));
+      lastExportDir.mkdirs();
+    }
   }
 
   void draw(Document doc, ToolManager tools, CommandManager history) {
@@ -58,6 +71,7 @@ class UI {
     btnOpen.draw(false);
     btnMove.draw("Move".equals(tools.activeName()));
     btnCrop.draw("Crop".equals(tools.activeName()));
+    btnExport.draw(false);
     btnUndo.draw(false);
     btnRedo.draw(false);
 
@@ -97,6 +111,10 @@ class UI {
       app.tools.setTool(new CropTool(app.history));
       return true;
     }
+    if (btnExport.hit(mx, my)) {
+      exportCanvas();
+      return true;
+    }
     if (btnUndo.hit(mx, my)) {
       app.history.undo(app.doc);
       return true;
@@ -121,6 +139,9 @@ class UI {
 
   void openFileDialog() {
     selectInput("Select an image", "fileSelected");
+  }
+  void exportCanvas() {
+    selectOutput("Export canvas (PNG)", "exportSelected", defaultExportFile());
   }
 
   void onFileSelected(Document doc, File selection) {
@@ -154,7 +175,7 @@ class UI {
     doc.renderFlags.dirtyComposite = true;
     layerListPanel.refresh(doc);
   }
-void updatePropertiesFromLayer(Layer l) {
+  void updatePropertiesFromLayer(Layer l) {
     if (l == null || fieldX == null || sliderOpacity == null) return;
     
     isUpdatingUI = true; 
@@ -224,7 +245,7 @@ void updatePropertiesFromLayer(Layer l) {
   fieldY.addActionListener(e -> updateLayerFromUI());
 }
 // 从 UI 更新到图层
-void updateOpacityFromUI() {
+  void updateOpacityFromUI() {
   if (isUpdatingUI) return;
   Layer active = doc.layers.getActive();
   if (active == null) return;
@@ -232,6 +253,46 @@ void updateOpacityFromUI() {
   float newOp = sliderOpacity.getValue();
   app.history.perform(doc, new OpacityCommand(active, newOp));
 }
+
+  File defaultExportFile() {
+    return new File(lastExportDir, defaultExportName());
+  }
+
+  String defaultExportName() {
+    String stamp = new SimpleDateFormat("yyyyMMdd-HHmmss").format(new Date());
+    return "export-" + stamp + ".png";
+  }
+
+  void onExportSelected(Document doc, File selection) {
+    if (selection == null || doc == null || doc.canvas == null) return;
+
+    // ensure the backing canvas is up to date before capture
+    app.renderer.drawCanvas(doc, app.tools);
+
+    int exportX = max(0, doc.viewX);
+    int exportY = max(0, doc.viewY);
+    int exportW = max(1, min(doc.viewW, doc.canvas.width - exportX));
+    int exportH = max(1, min(doc.viewH, doc.canvas.height - exportY));
+    if (exportW <= 0 || exportH <= 0) return;
+
+    PImage output = doc.canvas.get(exportX, exportY, exportW, exportH);
+    File target = selection.isDirectory()
+      ? new File(selection, defaultExportName())
+      : selection;
+
+    String path = target.getAbsolutePath();
+    if (!path.toLowerCase().endsWith(".png")) path += ".png";
+    output.save(path);
+    println("Exported canvas to: " + path);
+    lastExportDir = new File(path).getParentFile();
+    // 在独立应用里找不到文件时，弹窗告诉用户具体路径
+    JOptionPane.showMessageDialog(
+      null,
+      "已导出到：\n" + path,
+      "Export Completed",
+      JOptionPane.INFORMATION_MESSAGE
+    );
+  }
 }
   
 
