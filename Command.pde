@@ -261,36 +261,6 @@ class CropCommand implements Command {
   }
 }
 
-class MoveCommand implements Command {
-  Layer target;
-  float oldX, oldY, newX, newY;
-
-  MoveCommand(Layer l, float nx, float ny) {
-    this.target = l;
-    this.oldX = l.x;
-    this.oldY = l.y;
-    this.newX = nx;
-    this.newY = ny;
-  }
-
-  public void execute(Document doc) {
-    target.x = newX;
-    target.y = newY;
-    doc.markChanged(); // 标记画布需要重绘
-  }
-
-  public void undo(Document doc) {
-    target.x = oldX;
-    target.y = oldY;
-    doc.markChanged();
-  }
-
-  public String name() {
-    return "Manual Move";
-  }
-}
-
-
 class TransformCommand implements Command {
   Layer target;
   float oldX, oldY, oldScale, oldRotation;
