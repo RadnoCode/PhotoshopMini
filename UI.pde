@@ -87,6 +87,23 @@ class UI {
     text("X-axis: " + /*history.undoCount()*/mouseX, RightpanelX + 12, height - 50);
     text("Y-axis: " + /*history.redoCount()*/mouseY, RightpanelX + 12, height - 30);
 
+    // 隐藏/重置属性面板
+    Layer active = doc.layers.getActive();
+    // 核心逻辑：如果没有活跃图层，隐藏 Java Swing 的属性面板
+    if (active == null || active.img == null) {
+      if (propsPanel != null && propsPanel.isVisible()) {
+        propsPanel.setVisible(false); // 隐藏面板
+      }
+      // 可以在原本显示属性的地方画一些提示文字
+      fill(100);
+      textSize(12);
+      text("Select a layer to edit properties", RightpanelX + 12, layerListPanel.topY - 20);
+    } else {
+      if (propsPanel != null && !propsPanel.isVisible()) {
+        propsPanel.setVisible(true); // 重新显示面板
+      }
+    }
+
     if (doc.layers.getActive() == null || doc.layers.getActive().img == null) {
       fill(255, 160, 160);
       text("No image loaded.", RightpanelX + 12, height - 95);
@@ -220,6 +237,25 @@ class UI {
     } else {
       fieldText.setText("");
     }
+
+    if (l == null) {
+    if (propsPanel != null) {
+      propsPanel.setVisible(false); // 隐藏面板
+    }
+    return;
+  }
+
+  // 如果有图层，确保面板可见并更新数值
+  if (propsPanel != null) {
+    propsPanel.setVisible(true); 
+  }
+  
+  isUpdatingUI = true; 
+  if (fieldX != null) fieldX.setText(String.valueOf((int)l.x));
+  if (fieldY != null) fieldY.setText(String.valueOf((int)l.y));
+  if (sliderOpacity != null) {
+    sliderOpacity.setValue((int)(l.opacity * 255));
+  }
     
     isUpdatingUI = false; 
   }

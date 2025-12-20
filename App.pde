@@ -45,6 +45,12 @@ public class App {
   void onMouseDragged(int mx, int my, int btn) {
     if (ui.handleMouseDragged(this, mx, my, btn)) return;
     tools.mouseDragged(doc, mx, my, btn);
+
+    // 同步坐标到UI的状态显示
+    Layer active = doc.layers.getActive();
+    if (active != null) {
+      ui.updatePropertiesFromLayer(active);
+    }
   }
 
   void onMouseReleased(int mx, int my, int btn) {

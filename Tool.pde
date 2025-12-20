@@ -45,21 +45,43 @@ class MoveTool implements Tool {
 
   public void mousePressed(Document doc, int mx, int my, int btn) {
     if (btn != LEFT) return;
-    dragging = true;
-    lastX = mx;
-    lastY = my;
+// 只有当存在活跃图层时才开启拖拽
+    if (doc.layers.getActive() != null) {
+      dragging = true;
+      lastX = mx;
+      lastY = my;
+    }
   }
 
   public void mouseDragged(Document doc, int mx, int my, int btn) {
     if (!dragging) return;
-    doc.view.panX += (mx - lastX);
-    doc.view.panY += (my - lastY);
+    Layer active = doc.layers.getActive();
+    if (active != null) {
+      // 计算鼠标位移量
+      float dx = mx - lastX;
+      float dy = my - lastY;
+
+      // 关键修改：只改变活跃图层的坐标，而不是 view.pan
+      active.x += dx;
+      active.y += dy;
+      // 标记画布需要重新渲染
+      doc.markChanged();
+      }
+
+
+    // doc.view.panX += (mx - lastX);
+    // doc.view.panY += (my - lastY);
     lastX = mx;
     lastY = my;
+    // 注释掉以上代码，进行调试
   }
 
   public void mouseReleased(Document doc, int mx, int my, int btn) {
-    dragging = false;
+    if (dragging) {
+      // 可以在这里添加一个 MoveCommand 到 history 
+      // 这样移动操作就可以被 Undo 了
+      dragging = false;
+    }
   }
 
   public void mouseWheel(Document doc, float delta) {
@@ -67,6 +89,11 @@ class MoveTool implements Tool {
   }
 
   public void drawOverlay(Document doc) {
+  // 在活跃图层周围画一个虚线框，提示它被选中了
+    Layer active = doc.layers.getActive();
+    if (active != null && active.img != null) {
+    // 绘制逻辑在这里
+    }    
   }
   public String name() {
     return "Move";
