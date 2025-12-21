@@ -16,7 +16,7 @@ class UI {
   boolean isUpdatingUI = false; // 新增：标记位，防止循环触发
   File lastExportDir;
 
-  UIButton btnOpen, btnMove, btnCrop, btnText, btnExport, btnUndo, btnRedo;
+  UIButton btnOpen, btnMove, btnCrop, btnText, btnExport, btnUndo, btnRedo, btnBlur, btnCon, btnSharpen;
   LayerListPanel layerListPanel;
 
 
@@ -52,6 +52,12 @@ class UI {
     btnUndo = new UIButton(x, y, w, h, "(U)");
     y += h + gap;
     btnRedo = new UIButton(x, y, w, h, "(R)");
+    y += h + gap;
+    btnBlur = new UIButton(x, y, w, h, "(B)");
+    y += h + gap;
+    btnCon = new UIButton(x, y, w, h, "(Con)");
+    y += h + gap;
+    btnSharpen = new UIButton(x, y, w, h, "(Sharp)");
     y += h + gap;
 
     //初始化图层面板
@@ -154,7 +160,17 @@ class UI {
       app.history.redo(app.doc);
       return true;
     }
-
+    if (btnBlur.hit(mx, my)) {
+      app.history.perform(app.doc,new AddFilterCommand(app.doc.layers.getActive(),new GaussianBlurFilter(5,10)));
+      return true;
+    }
+    if( btnCon.hit(mx, my)) {
+      app.history.perform(app.doc,new AddFilterCommand(app.doc.layers.getActive(),new ContrastFilter(1.5)));
+      return true;
+    }
+    if( btnSharpen.hit(mx, my)) {
+      app.history.perform(app.doc,new AddFilterCommand(app.doc.layers.getActive(),new SharpenFilter(1.0)));
+    }
     return true; // consume clicks on panel
   }
 
@@ -326,8 +342,7 @@ class UI {
     int size = ((Number) spinnerFontSize.getValue()).intValue();
     app.history.perform(doc, new SetFontSizeCommand(tl, size));
   }
-
-  void handleContrastChange() {
+    void handleContrastChange() {
     if (isUpdatingUI) return; // 避免同步 UI 时产生的副作用
 
     Layer active = doc.layers.getActive();
@@ -340,15 +355,14 @@ class UI {
     app.history.perform(doc, new ContrastCommand(active, newVal));
   }
 
-  void handleSharpenChange() {
+  /*void handleSharpenChange() {
     if (isUpdatingUI) return;
     Layer active = doc.layers.getActive();
     if (active == null || active.originalImg == null) return;
 
     float val = sliderSharpen.getValue() / 100.0f;
     app.history.perform(doc, new SharpenCommand(active, val));
-  }
-
+  }*/
   void setupPropertiesPanel(JPanel container) {
     // 属性：位置、透明度、文本、对比度、锐度
     propsPanel = new JPanel(new GridLayout(9, 2, 5, 5));
@@ -383,13 +397,13 @@ class UI {
       handleSharpenChange();
     }
   });
-  
+  /*
     // 对比度相关
     JLabel labelContrast = new JLabel(" Contrast:");
     labelContrast.setForeground(Color.WHITE);
     sliderContrast = new JSlider(0, 200, 100); // 默认为1.0，范围是 0.0 到 2.0
     sliderContrast.setBackground(new Color(60, 60, 60));
-
+*/
     // 参数：最小值, 最大值, 当前值
     sliderOpacity = new JSlider(0, 255, 255);
     sliderOpacity.setBackground(new Color(60, 60, 60));

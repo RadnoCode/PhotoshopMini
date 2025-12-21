@@ -408,63 +408,56 @@ class SetFontSizeCommand implements Command {
   }
 }
 
-// ---------- ContrastCommand (CPU based contrast adjustment) ----------
-class ContrastCommand implements Command {
-  Layer layer;
-  float before, after;
+class AddFilterCommand implements Command {
 
-  /**
-   * @param l 目标图层
-   * @param newVal 新的对比度值（建议 0.0 - 2.0，1.0 为原图）
-   */
-  ContrastCommand(Layer l, float newVal) {
-    this.layer = l;
-    this.before = l.contrast; // 记录旧值用于 undo
-    this.after = newVal;
+
+
+  Layer layer;
+  Filter filter;
+
+  AddFilterCommand(Layer layer, Filter filter) {
+    this.layer = layer;
+    this.filter = filter;
   }
 
   public void execute(Document doc) {
-    if (layer == null) return;
-    // 调用 Layer 类中我们定义的 CPU 像素处理方法
-    layer.applyContrast(after);
-    // 标记画布需要重绘，这样 Renderer 才会把处理后的图像画上去
-    doc.markChanged(); 
+    layer.filters.add(filter);
+    layer.dirty = true;
+    doc.markChanged();
   }
 
   public void undo(Document doc) {
-    if (layer == null) return;
-    // 恢复旧的对比度并重新计算像素
-    layer.applyContrast(before);
+    layer.filters.remove(filter);
+    layer.dirty = true;
     doc.markChanged();
   }
 
   public String name() {
-    return "Change Contrast";
+    return "Add Filter";
   }
 }
-
-// ---------- SharpenCommand (CPU based sharpen adjustment) ----------
-class SharpenCommand implements Command {
+class RemoveFilterCommand implements Command {
   Layer layer;
-  float before, after;
+  Filter filter;
 
-  SharpenCommand(Layer l, float val) {
-    this.layer = l;
-    this.before = l.sharp;
-    this.after = val;
+  RemoveFilterCommand(Layer layer, Filter filter) {
+    this.layer = layer;
+    this.filter = filter;
   }
 
   public void execute(Document doc) {
-    if (layer == null) return;
-    layer.applySharpen(after);
+    layer.filters.remove(filter);
+    layer.dirty = true;
     doc.markChanged();
   }
 
   public void undo(Document doc) {
-    if (layer == null) return;
-    layer.applySharpen(before);
+    layer.filters.add(filter);
+    layer.dirty = true;
     doc.markChanged();
   }
 
-  public String name() { return "Sharpen Image"; }
+  public String name() {
+    return "Remove Filter";
+  }
 }
