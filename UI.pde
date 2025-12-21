@@ -25,6 +25,7 @@ class UI {
   JSpinner spinnerFontSize;
   JPanel propsPanel;
   JSlider sliderOpacity;
+  JSlider sliderContrast;
 
   UI(PApplet parent, Document doc, App app) {
     this.parent = parent;
@@ -231,6 +232,11 @@ class UI {
     fieldX.setText(String.valueOf((int)l.x));
     fieldY.setText(String.valueOf((int)l.y));
 
+    // 同步对比度滑动条
+    if (sliderContrast != null) {
+      sliderContrast.setValue((int)(l.contrast * 100));
+    }
+
     // 同步透明度滑动条：将 0.0-1.0 还原回 0-255
     sliderOpacity.setValue((int)(l.opacity * 255));
 
@@ -316,9 +322,23 @@ class UI {
     int size = ((Number) spinnerFontSize.getValue()).intValue();
     app.history.perform(doc, new SetFontSizeCommand(tl, size));
   }
+
+  void handleContrastChange() {
+    if (isUpdatingUI) return; // 避免同步 UI 时产生的副作用
+
+    Layer active = doc.layers.getActive();
+    if (active == null) return;
+    
+    // 计算新的对比度值 (0.0 到 2.0)
+    float newVal = sliderContrast.getValue() / 100.0f;
+    
+    // 执行命令，这会触发 Layer.applyContrast 并标记 doc.markChanged()
+    app.history.perform(doc, new ContrastCommand(active, newVal));
+  }
+
   void setupPropertiesPanel(JPanel container) {
-    // 属性：位置、透明度、文本
-    propsPanel = new JPanel(new GridLayout(6, 2, 5, 5));
+    // 属性：位置、透明度、文本、对比度
+    propsPanel = new JPanel(new GridLayout(7, 2, 5, 5));
     propsPanel.setBackground(new Color(60, 60, 60));
 
     // 初始化 X, Y 输入框
@@ -335,9 +355,17 @@ class UI {
     // 监听回车
     fieldX.addActionListener(e -> updateLayerFromUI());
     fieldY.addActionListener(e -> updateLayerFromUI());
+
     // --- 新增：透明度部分 ---
     JLabel labelOp = new JLabel(" Opacity:");
     labelOp.setForeground(Color.WHITE);
+  
+    // 对比度相关
+    JLabel labelContrast = new JLabel(" Contrast:");
+    labelContrast.setForeground(Color.WHITE);
+    sliderContrast = new JSlider(0, 200, 100); // 默认为1.0，范围是 0.0 到 2.0
+    sliderContrast.setBackground(new Color(60, 60, 60));
+
     // 参数：最小值, 最大值, 当前值
     sliderOpacity = new JSlider(0, 255, 255);
     sliderOpacity.setBackground(new Color(60, 60, 60));
@@ -357,12 +385,12 @@ class UI {
     spinnerFontSize = new JSpinner(new SpinnerNumberModel(48, 6, 400, 2));
 
     // 监听滑动条
-    sliderOpacity.addChangeListener(e -> {
-      if (!sliderOpacity.getValueIsAdjusting()) { // 当玩家松开手指时执行命令
-        updateOpacityFromUI();
+    sliderContrast.addChangeListener(e -> {
+    // 关键性能优化：只有在用户松开鼠标时，才触发耗时的像素计算
+      if (!sliderContrast.getValueIsAdjusting()) {
+        handleContrastChange();
       }
-    }
-    );
+    });
 
     fieldText.addActionListener(e -> updateTextFromUI());
     comboFont.addActionListener(e -> updateFontNameFromUI());
@@ -374,6 +402,8 @@ class UI {
     propsPanel.add(fieldY);
     propsPanel.add(labelOp);
     propsPanel.add(sliderOpacity);
+    propsPanel.add(labelContrast);
+    propsPanel.add(sliderContrast);
     propsPanel.add(labelText);
     propsPanel.add(fieldText);
     propsPanel.add(labelFont);

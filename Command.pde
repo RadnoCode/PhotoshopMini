@@ -299,7 +299,7 @@ class TransformCommand implements Command {
   }
 }
 
-
+// ---------- OpacityCommand (0.0 - 1.0) ----------
 class OpacityCommand implements Command {
   Layer target;
   float oldOp, newOp;
@@ -405,5 +405,40 @@ class SetFontSizeCommand implements Command {
 
   public String name() {
     return "Set Font Size";
+  }
+}
+
+// ---------- ContrastCommand (CPU based contrast adjustment) ----------
+class ContrastCommand implements Command {
+  Layer layer;
+  float before, after;
+
+  /**
+   * @param l 目标图层
+   * @param newVal 新的对比度值（建议 0.0 - 2.0，1.0 为原图）
+   */
+  ContrastCommand(Layer l, float newVal) {
+    this.layer = l;
+    this.before = l.contrast; // 记录旧值用于 undo
+    this.after = newVal;
+  }
+
+  public void execute(Document doc) {
+    if (layer == null) return;
+    // 调用 Layer 类中我们定义的 CPU 像素处理方法
+    layer.applyContrast(after);
+    // 标记画布需要重绘，这样 Renderer 才会把处理后的图像画上去
+    doc.markChanged(); 
+  }
+
+  public void undo(Document doc) {
+    if (layer == null) return;
+    // 恢复旧的对比度并重新计算像素
+    layer.applyContrast(before);
+    doc.markChanged();
+  }
+
+  public String name() {
+    return "Change Contrast";
   }
 }

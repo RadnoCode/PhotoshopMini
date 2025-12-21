@@ -13,6 +13,7 @@ class Layer {
   float y = 0;
   float rotation = 0;     // radians
   float scale = 1.0;      // 
+  float contrast = 1.0;
 
   //Other properties
   float blur,sharp;// need to be initialize
@@ -20,11 +21,17 @@ class Layer {
   // Pivot in LOCAL space (image space)
   float pivotX = 0;
   float pivotY = 0;
+
+  PImage originalImg; // 保存未经调色的原图，防止反复处理导致画质损失
+  PImage processedImg; // 实际绘制到画布上的图
   
   Layer(PImage img,int id) {
     this.ID=id;
     this.img = img;
     if (img != null) {
+      this.originalImg = img.get(); // 拷贝一份原图
+      this.processedImg = img.get();
+      this.img = this.processedImg; // 兼容原有代码
       pivotX = img.width * 0.5;
       pivotY = img.height * 0.5;
     }
@@ -44,6 +51,41 @@ class Layer {
     doc.canvas.tint(255, 255 * opacity);
     doc.canvas.image(img, -pivotX, -pivotY);
     doc.canvas.noTint();
+  }
+  void applyContrast(float value) {
+    this.contrast = value;
+    if (originalImg == null || processedImg == null) return;
+
+    originalImg.loadPixels();
+    processedImg.loadPixels();
+
+    // 对比度公式因子
+    // value 建议范围：0.0 (全灰) 到 2.0 (极高对比度)，1.0 为原图
+    
+    for (int i = 0; i < originalImg.pixels.length; i++) {
+      int c = originalImg.pixels[i];
+      
+      // 使用位移快速提取 RGB (比 red(), green() 快得多)
+      int r = (c >> 16) & 0xFF;
+      int g = (c >> 8) & 0xFF;
+      int b = c & 0xFF;
+      int a = (c >> 24) & 0xFF; // 保留 Alpha 通道
+
+      // 核心算法：(当前值 - 中等亮度) * 对比度 + 中等亮度
+      r = (int)((r - 128) * value + 128);
+      g = (int)((g - 128) * value + 128);
+      b = (int)((b - 128) * value + 128);
+
+      // 约束范围 0-255，防止溢出
+      r = r < 0 ? 0 : (r > 255 ? 255 : r);
+      g = g < 0 ? 0 : (g > 255 ? 255 : g);
+      b = b < 0 ? 0 : (b > 255 ? 255 : b);
+
+      // 重新拼合像素
+      processedImg.pixels[i] = (a << 24) | (r << 16) | (g << 8) | b;
+    }
+    processedImg.updatePixels();
+    // 注意：img 指向的是 processedImg，所以调用此方法后，drawSelf 会自动画出新图
   }
 
   // ---------- Geometry helpers ----------
