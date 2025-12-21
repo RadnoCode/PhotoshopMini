@@ -111,7 +111,11 @@ class PropertiesPanel {
     transformContent.add(Box.createVerticalStrut(8));
     transformContent.add(textPanel);
 
-    tabs.addTab("Transform", transformContent);
+    JScrollPane transformScroll = new JScrollPane(transformContent);
+    transformScroll.setBorder(BorderFactory.createEmptyBorder());
+    transformScroll.getViewport().setBackground(new Color(60, 60, 60));
+    transformScroll.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
+    tabs.addTab("Transform", transformScroll);
   }
 
   void buildFilterTab() {
