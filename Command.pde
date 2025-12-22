@@ -569,3 +569,33 @@ class SharpenChangeCommand implements Command {
     return "Change Sharpen";
   }
 }
+
+class layerMoveCommand implements Command {
+  Layer layer;
+  float beforeX, beforeY;
+  float afterX, afterY;
+
+  layerMoveCommand(Layer layer, float afterX, float afterY) {
+    this.layer = layer;
+    this.beforeX = layer.x;
+    this.beforeY = layer.y;
+    this.afterX = afterX;
+    this.afterY = afterY;
+  }
+
+  public void execute(Document doc) {
+    layer.x = afterX;
+    layer.y = afterY;
+    doc.markChanged();
+  }
+
+  public void undo(Document doc) {
+    layer.x = beforeX;
+    layer.y = beforeY;
+    doc.markChanged();
+  }
+
+  public String name() {
+    return "Move Layer Position";
+  }
+}

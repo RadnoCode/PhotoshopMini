@@ -265,3 +265,69 @@ class CropTool implements Tool {
     return new IntRect(x1, y1, w, h);
   }
 }
+
+class LayerMoveTool implements Tool {
+  CommandManager history;
+  Layer target;
+  
+  float startMouseX, startMouseY; // 鼠标按下时的 Canvas 坐标
+  float initialLayerX, initialLayerY; // 图层按下时的初始坐标
+  boolean dragging = false;
+
+  LayerMoveTool(CommandManager history) {
+    this.history = history;
+  }
+
+  public void mousePressed(Document doc, int mx, int my, int btn) {
+    if (btn != LEFT) return;
+    
+    target = doc.layers.getActive();
+    if (target == null) return;
+
+    dragging = true;
+    // 将屏幕坐标转换为 Canvas 坐标，这样在缩放状态下移动也是准确的
+    startMouseX = doc.view.screenToCanvasX(mx);
+    startMouseY = doc.view.screenToCanvasY(my);
+    
+    initialLayerX = target.x;
+    initialLayerY = target.y;
+  }
+
+  public void mouseDragged(Document doc, int mx, int my, int btn) {
+    if (!dragging || target == null) return;
+
+    float currentMouseX = doc.view.screenToCanvasX(mx);
+    float currentMouseY = doc.view.screenToCanvasY(my);
+
+    // 计算鼠标位移量
+    float dx = currentMouseX - startMouseX;
+    float dy = currentMouseY - startMouseY;
+
+    // 实时更新图层位置（预览）
+    target.x = initialLayerX + dx;
+    target.y = initialLayerY + dy;
+    
+    doc.markChanged(); // 标记需要重新渲染
+  }
+
+  public void mouseReleased(Document doc, int mx, int my, int btn) {
+    if (!dragging || target == null) return;
+    dragging = false;
+
+    // 只有当位置真的发生变化时，才提交到历史记录
+    if (target.x != initialLayerX || target.y != initialLayerY) {
+      // 注意这里传入的是最终的 target.x 和 target.y
+      history.perform(doc, new layerMoveCommand(target, target.x, target.y));
+    }
+  }
+
+  public void mouseWheel(Document doc, float delta) {
+    doc.view.zoomAroundMouse(delta); // 移动工具下通常也允许缩放
+  }
+
+  public void drawOverlay(Document doc) {
+    // 可以在这里给选中的图层画一个高亮框
+  }
+
+  public String name() { return "LayerMove"; }
+}
