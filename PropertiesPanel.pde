@@ -4,7 +4,7 @@ class PropertiesPanel {
   Document doc;
   App app;
 
-  final Dimension labelSize = new Dimension(120, 24);
+  final Dimension labelSize = new Dimension(90, 24);
 
   Layer activeLayer;
   boolean isUpdating = false;
@@ -59,36 +59,46 @@ class PropertiesPanel {
     fieldX = new JTextField("0", 5);
     sliderX = buildSlider(-rangeX, rangeX, 0);
     bindPositionControl(fieldX, sliderX);
-    transformContent.add(makeRow("X", fieldX, sliderX));
-
     fieldY = new JTextField("0", 5);
     sliderY = buildSlider(-rangeY, rangeY, 0);
     bindPositionControl(fieldY, sliderY);
-    transformContent.add(makeRow("Y", fieldY, sliderY));
+    JPanel positionBlock = makeSectionBlock("Position");
+    positionBlock.add(makeRow("X", fieldX, sliderX));
+    positionBlock.add(makeRow("Y", fieldY, sliderY));
+    transformContent.add(positionBlock);
 
     fieldRotation = new JTextField("0", 5);
     sliderRotation = buildSlider(-180, 180, 0);
     bindRotationControl(fieldRotation, sliderRotation);
-    transformContent.add(makeRow("Rotation (deg)", fieldRotation, sliderRotation));
+    JPanel rotationBlock = makeSectionBlock("Rotation");
+    rotationBlock.add(makeRow("Rotation (deg)", fieldRotation, sliderRotation));
+    transformContent.add(Box.createVerticalStrut(8));
+    transformContent.add(rotationBlock);
 
     fieldScale = new JTextField("1.0", 5);
     sliderScale = buildSlider(10, 300, 100); // 0.1x - 3x
     bindScaleControl(fieldScale, sliderScale);
-    transformContent.add(makeRow("Scale", fieldScale, sliderScale));
+    JPanel scaleBlock = makeSectionBlock("Scale");
+    scaleBlock.add(makeRow("Scale", fieldScale, sliderScale));
+    transformContent.add(Box.createVerticalStrut(8));
+    transformContent.add(scaleBlock);
 
     fieldOpacity = new JTextField("255", 5);
     sliderOpacity = buildSlider(0, 255, 255);
     bindOpacityControl(fieldOpacity, sliderOpacity);
-    transformContent.add(makeRow("Opacity", fieldOpacity, sliderOpacity));
+    JPanel opacityBlock = makeSectionBlock("Opacity");
+    opacityBlock.add(makeRow("Opacity", fieldOpacity, sliderOpacity));
+    transformContent.add(Box.createVerticalStrut(8));
+    transformContent.add(opacityBlock);
 
     // Text related controls
     JPanel textPanel = new JPanel();
     textPanel.setLayout(new GridLayout(3, 2, 6, 6));
     textPanel.setOpaque(false);
-    textPanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(new Color(90, 90, 90)), "Text"));
+    textPanel.setBorder(BorderFactory.createEmptyBorder());
 
     JLabel labelText = makeLabel("Text");
-    fieldText = new JTextField("", 10);
+    fieldText = new JTextField("", 8);
     fieldText.addActionListener(e -> applyTextChange());
     fieldText.addFocusListener(new java.awt.event.FocusAdapter() {
       public void focusLost(java.awt.event.FocusEvent e) { applyTextChange(); }
@@ -110,13 +120,15 @@ class PropertiesPanel {
     textPanel.add(labelSize);
     textPanel.add(spinnerFontSize);
 
+    JPanel textBlock = makeSectionBlock("Text");
+    textBlock.add(textPanel);
     transformContent.add(Box.createVerticalStrut(8));
-    transformContent.add(textPanel);
+    transformContent.add(textBlock);
 
     JScrollPane transformScroll = new JScrollPane(transformContent);
     transformScroll.setBorder(BorderFactory.createEmptyBorder());
     transformScroll.getViewport().setBackground(new Color(60, 60, 60));
-    transformScroll.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
+    transformScroll.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED);
     tabs.addTab("Transform", transformScroll);
   }
 
@@ -129,6 +141,7 @@ class PropertiesPanel {
     JScrollPane scroll = new JScrollPane(filterContent);
     scroll.setBorder(BorderFactory.createEmptyBorder());
     scroll.getViewport().setBackground(new Color(60, 60, 60));
+    scroll.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED);
 
     tabs.addTab("Filter", scroll);
   }
@@ -210,17 +223,23 @@ class PropertiesPanel {
     fieldRow.add(label, BorderLayout.WEST);
     if (field != null) {
       field.setColumns(5);
+      Dimension compact = new Dimension(70, field.getPreferredSize().height);
+      field.setPreferredSize(compact);
+      field.setMinimumSize(compact);
+      field.setMaximumSize(new Dimension(90, compact.height));
       field.setHorizontalAlignment(JTextField.RIGHT);
       fieldRow.add(field, BorderLayout.EAST);
     }
 
     JPanel sliderRow = new JPanel(new BorderLayout());
     sliderRow.setOpaque(false);
+    slider.setMaximumSize(new Dimension(Integer.MAX_VALUE, slider.getPreferredSize().height));
     sliderRow.add(slider, BorderLayout.CENTER);
 
     row.add(fieldRow, BorderLayout.NORTH);
     row.add(sliderRow, BorderLayout.CENTER);
     row.add(Box.createVerticalStrut(8), BorderLayout.SOUTH);
+    row.setMaximumSize(new Dimension(Integer.MAX_VALUE, row.getPreferredSize().height));
     return row;
   }
 
@@ -397,12 +416,16 @@ class PropertiesPanel {
     return label;
   }
 
-  JPanel makeFilterBlock(String title) {
+  JPanel makeSectionBlock(String title) {
     JPanel panel = new JPanel();
     panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
     panel.setOpaque(false);
     panel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(new Color(90, 90, 90)), title));
     return panel;
+  }
+
+  JPanel makeFilterBlock(String title) {
+    return makeSectionBlock(title);
   }
 
   void addGaussianBlurControls(GaussianBlurFilter filter) {
@@ -500,20 +523,19 @@ class PropertiesPanel {
 
   void applyBlurChange(GaussianBlurFilter filter, int radius, int sigma) {
     if (activeLayer == null) return;
-    
-    filter.change(radius, sigma);
+    app.history.perform(doc, new BlurChangeCommand(filter, radius, sigma));
     markFiltersDirty();
   }
 
   void applyContrastChange(ContrastFilter filter, float value) {
     if (activeLayer == null) return;
-    filter.value = value;
+    app.history.perform(doc, new ContrastChangeCommand(filter, value));
     markFiltersDirty();
   }
 
   void applySharpenChange(SharpenFilter filter, float value) {
     if (activeLayer == null) return;
-    filter.value = value;
+    app.history.perform(doc, new SharpenChangeCommand(filter, value));
     markFiltersDirty();
   }
 

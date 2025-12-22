@@ -25,6 +25,18 @@ public class App {
     history = new CommandManager();
     ui = new UI(parent, this.doc, this);
 
+    // Keep UI widgets in sync after any history change (perform/undo/redo).
+    history.setListener(new CommandListener() {
+      public void onHistoryChanged(Document d) {
+        SwingUtilities.invokeLater(new Runnable() {
+          public void run() {
+            ui.updatePropertiesFromLayer(d.layers.getActive());
+            ui.layerListPanel.refresh(d);
+          }
+        });
+      }
+    });
+
     tools.setTool(new MoveTool()); // When you enter, defualtly choose MoveTool 默认移动工具
   }// 生成函数，新建五大模块
 

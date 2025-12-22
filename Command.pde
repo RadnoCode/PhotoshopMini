@@ -8,15 +8,30 @@ interface Command {
   String name();
 }
 
+// Optional listener to keep UI/state in sync after history operations.
+interface CommandListener {
+  void onHistoryChanged(Document doc);
+}
+
 class CommandManager {
   ArrayList<Command> undoStack = new ArrayList<Command>();
   ArrayList<Command> redoStack = new ArrayList<Command>();
+  CommandListener listener;
+
+  void setListener(CommandListener listener) {
+    this.listener = listener;
+  }
+
+  void notifyListener(Document doc) {
+    if (listener != null) listener.onHistoryChanged(doc);
+  }
 
   void perform(Document doc, Command c) {
     if (c == null) return;
     c.execute(doc);
     undoStack.add(c);
     redoStack.clear();
+    notifyListener(doc);
   }
 
   void undo(Document doc) {
@@ -24,6 +39,7 @@ class CommandManager {
     Command c = undoStack.remove(undoStack.size()-1);
     c.undo(doc);
     redoStack.add(c);
+    notifyListener(doc);
   }
 
   void redo(Document doc) {
@@ -31,6 +47,7 @@ class CommandManager {
     Command c = redoStack.remove(redoStack.size()-1);
     c.execute(doc);
     undoStack.add(c);
+    notifyListener(doc);
   }
 
   int undoCount() {
@@ -421,6 +438,7 @@ class AddFilterCommand implements Command {
   }
 
   public void execute(Document doc) {
+    filter.layer = layer;
     layer.filters.add(filter);
     layer.dirty = true;
     doc.markChanged();
@@ -428,6 +446,7 @@ class AddFilterCommand implements Command {
 
   public void undo(Document doc) {
     layer.filters.remove(filter);
+    filter.layer = null;
     layer.dirty = true;
     doc.markChanged();
   }
@@ -447,11 +466,13 @@ class RemoveFilterCommand implements Command {
 
   public void execute(Document doc) {
     layer.filters.remove(filter);
+    filter.layer = null;
     layer.dirty = true;
     doc.markChanged();
   }
 
   public void undo(Document doc) {
+    filter.layer = layer;
     layer.filters.add(filter);
     layer.dirty = true;
     doc.markChanged();
@@ -463,28 +484,88 @@ class RemoveFilterCommand implements Command {
 }
 
 class BlurChangeCommand implements Command {
-  BlurFilter filter;
-  float bR, aR,bS,aS;
+  GaussianBlurFilter filter;
+  int bR, aR, bS, aS;
 
-  BlurChangeCommand(BlurFilter filter, float aR,float aS) {
+  BlurChangeCommand(GaussianBlurFilter filter, int aR,int aS) {
     this.filter = filter;
     this.aR = aR;
     this.aS = aS;
+    this.bR = filter.radius;
+    this.bS = filter.sigma;
   }
 
   public void execute(Document doc) {
-    filter.radius = after;s
-    filter.layer.dirty = true;
+    filter.radius = aR;
+    filter.sigma = aS;
+    filter.change = true;
+    if (filter.layer != null) filter.layer.dirty = true;
     doc.markChanged();
   }
 
   public void undo(Document doc) {
-    filter.radius = before;
-    filter.layer.dirty = true;
+    filter.radius = bR;
+    filter.sigma = bS;
+    filter.change = true;
+    if (filter.layer != null) filter.layer.dirty = true;
     doc.markChanged();
   }
 
   public String name() {
     return "Change Blur Radius";
+  }
+}
+
+class ContrastChangeCommand implements Command {
+  ContrastFilter filter;
+  float before, after;
+
+  ContrastChangeCommand(ContrastFilter filter, float after) {
+    this.filter = filter;
+    this.after = after;
+    this.before = filter.value;
+  }
+
+  public void execute(Document doc) {
+    filter.value = after;
+    if (filter.layer != null) filter.layer.dirty = true;
+    doc.markChanged();
+  }
+
+  public void undo(Document doc) {
+    filter.value = before;
+    if (filter.layer != null) filter.layer.dirty = true;
+    doc.markChanged();
+  }
+
+  public String name() {
+    return "Change Contrast";
+  }
+}
+
+class SharpenChangeCommand implements Command {
+  SharpenFilter filter;
+  float before, after;
+
+  SharpenChangeCommand(SharpenFilter filter, float after) {
+    this.filter = filter;
+    this.after = after;
+    this.before = filter.value;
+  }
+
+  public void execute(Document doc) {
+    filter.value = after;
+    if (filter.layer != null) filter.layer.dirty = true;
+    doc.markChanged();
+  }
+
+  public void undo(Document doc) {
+    filter.value = before;
+    if (filter.layer != null) filter.layer.dirty = true;
+    doc.markChanged();
+  }
+
+  public String name() {
+    return "Change Sharpen";
   }
 }

@@ -64,6 +64,8 @@ class Layer {
         processedImg = img.get();
         for (int i = 0;i < filters.size();i++) {
             Filter f = filters.get(i);
+            // Ensure commands know which layer owns this filter.
+            f.layer = this;
             f.apply(this);
         }
 }

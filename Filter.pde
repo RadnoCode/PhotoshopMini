@@ -1,4 +1,6 @@
 class Filter{
+    // Owning layer, set when the filter is attached/applied.
+    Layer layer;
     void apply(Layer l) {}
     
     int clamp255(int v) {
