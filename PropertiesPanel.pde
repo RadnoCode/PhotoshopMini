@@ -365,6 +365,7 @@ class PropertiesPanel {
     app.history.perform(doc, new OpacityCommand(activeLayer, sliderOpacity.getValue()));
   }
 
+
   void applyTextChange() {
     if (isUpdating) return;
     if (!(activeLayer instanceof TextLayer)) return;
@@ -387,6 +388,8 @@ class PropertiesPanel {
     int size = ((Number) spinnerFontSize.getValue()).intValue();
     app.history.perform(doc, new SetFontSizeCommand(tl, size));
   }
+
+
 
   // --- Filter helpers ---
   void rebuildFilterTab() {
@@ -420,7 +423,13 @@ class PropertiesPanel {
     JPanel panel = new JPanel();
     panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
     panel.setOpaque(false);
-    panel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(new Color(90, 90, 90)), title));
+    TitledBorder border = BorderFactory.createTitledBorder(
+      BorderFactory.createLineBorder(new Color(230, 230, 230)),
+      title
+    );
+    border.setTitleColor(new Color(230, 230, 230)); 
+
+    panel.setBorder(border);
     return panel;
   }
 

@@ -31,7 +31,7 @@ public class App {
         SwingUtilities.invokeLater(new Runnable() {
           public void run() {
             ui.updatePropertiesFromLayer(d.layers.getActive());
-            ui.layerListPanel.refresh(d);
+            ui.refreshLayerList(d);
           }
         });
       }
@@ -73,7 +73,7 @@ public class App {
   void onMouseReleased(int mx, int my, int btn) {
     if (ui.handleMouseReleased(this, mx, my, btn)) return;
     tools.mouseReleased(doc, mx, my, btn);
-    ui.layerListPanel.refresh(doc); // 在鼠标释放时刷新图层列表
+    ui.refreshLayerList(doc); // 在鼠标释放时刷新图层列表
   }
 
   void onMouseWheel(float delta) {

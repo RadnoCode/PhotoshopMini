@@ -5,6 +5,7 @@ import javax.swing.*;
 import javax.swing.event.*;
 import processing.awt.PSurfaceAWT;
 import javax.swing.text.*;
+import javax.swing.border.TitledBorder;
 
 
 App app;

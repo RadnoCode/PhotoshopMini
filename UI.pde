@@ -147,6 +147,9 @@ class UI {
       return true;
     }
     if (btnExport.hit(mx, my)) {
+      if( app.doc == null ) {
+        return true;
+      }
       exportCanvas();
       return true;
     }
@@ -159,16 +162,25 @@ class UI {
       return true;
     }
     if (btnBlur.hit(mx, my)) {
+      if( app.doc.layers.getActive() == null ) {
+        return true;
+      }
       app.history.perform(app.doc,new AddFilterCommand(app.doc.layers.getActive(),new GaussianBlurFilter(5,10)));
       updatePropertiesFromLayer(app.doc.layers.getActive());
       return true;
     }
     if( btnCon.hit(mx, my)) {
+      if( app.doc.layers.getActive() == null ) {
+        return true;
+      }
       app.history.perform(app.doc,new AddFilterCommand(app.doc.layers.getActive(),new ContrastFilter(1.5)));
       updatePropertiesFromLayer(app.doc.layers.getActive());
       return true;
     }
     if( btnSharpen.hit(mx, my)) {
+      if( app.doc.layers.getActive() == null ) {
+        return true;
+      }
       app.history.perform(app.doc,new AddFilterCommand(app.doc.layers.getActive(),new SharpenFilter(1.0)));
       updatePropertiesFromLayer(app.doc.layers.getActive());
     }
@@ -200,7 +212,7 @@ class UI {
     tl.y = doc.viewH * 0.5 - tl.pivotY;
     app.history.perform(doc, new AddLayerCommand(tl, index));
     doc.renderFlags.dirtyComposite = true;
-    layerListPanel.refresh(doc);
+    refreshLayerList(doc);
     updatePropertiesFromLayer(tl);
   }
 
@@ -233,16 +245,32 @@ class UI {
     }
 
     doc.renderFlags.dirtyComposite = true;
-    layerListPanel.refresh(doc);
+    refreshLayerList(doc);
     updatePropertiesFromLayer(doc.layers.getActive());
   }
 
 
 
   void updatePropertiesFromLayer(Layer l) {
-    if (propertiesPanel != null) {
-      propertiesPanel.updateFromLayer(l);
-    }
+    if (propertiesPanel == null) return;
+    Runnable task = new Runnable() {
+      public void run() {
+        propertiesPanel.updateFromLayer(l);
+      }
+    };
+    if (SwingUtilities.isEventDispatchThread()) task.run();
+    else SwingUtilities.invokeLater(task);
+  }
+
+  void refreshLayerList(Document d) {
+    if (layerListPanel == null) return;
+    Runnable task = new Runnable() {
+      public void run() {
+        layerListPanel.refresh(d);
+      }
+    };
+    if (SwingUtilities.isEventDispatchThread()) task.run();
+    else SwingUtilities.invokeLater(task);
   }
 
 
