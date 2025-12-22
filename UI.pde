@@ -3,19 +3,17 @@ import java.util.Date;
 
 class UI {
   App app;
-
-
-
   PApplet parent;
   Document doc;
 
   int RightpanelW = 340;
   int RightpanelX = width-RightpanelW;
-  int LeftPannelW = 80;
+  int LeftPannelW = 64;
+  JPanel toolPanel;
+  ArrayList<JButton> toolButtons = new ArrayList<JButton>();
 
   File lastExportDir;
 
-  UIButton btnOpen, btnMove, btnCrop, btnText, btnExport, btnUndo, btnRedo, btnBlur, btnCon, btnSharpen;
   LayerListPanel layerListPanel;
 
 
@@ -26,32 +24,7 @@ class UI {
     this.doc = doc;
     this.app = app;
 
-    int x = 12;
-    int y = 20;
-    int w = LeftPannelW - 24;
-    int h = 28;
-    int gap = 10;
-
-    btnOpen = new UIButton(x, y, w, h, "Open");
-    y += h + gap;
-    btnMove = new UIButton(x, y, w, h, "Move");
-    y += h + gap;
-    btnCrop = new UIButton(x, y, w, h, "Crop");
-    y += h + gap;
-    btnText = new UIButton(x, y, w, h, "Text");
-    y += h + gap;
-    btnExport = new UIButton(x, y, w, h, "Export");
-    y += h + gap;
-    btnUndo = new UIButton(x, y, w, h, "Undo");
-    y += h + gap;
-    btnRedo = new UIButton(x, y, w, h, "Redo");
-    y += h + gap;
-    btnBlur = new UIButton(x, y, w, h, "Blur");
-    y += h + gap;
-    btnCon = new UIButton(x, y, w, h, "Contrast");
-    y += h + gap;
-    btnSharpen = new UIButton(x, y, w, h, "Sharp");
-    y += h + gap;
+    buildToolPanel();
 
     //初始化图层面板
     layerListPanel = new LayerListPanel(parent, doc, RightpanelX, RightpanelW, 0);
@@ -69,20 +42,7 @@ class UI {
 
   void draw(Document doc, ToolManager tools, CommandManager history) {
     RightpanelX = width - RightpanelW;
-
-    rect(0, 0, LeftPannelW, height);
-    
-    // buttons
-    btnOpen.draw(false);
-    btnMove.draw("Move".equals(tools.activeName()));
-    btnCrop.draw("Crop".equals(tools.activeName()));
-    btnText.draw("Text".equals(tools.activeName())); // text tool shares active name slot
-    btnExport.draw(false);
-    btnUndo.draw(false);
-    btnRedo.draw(false);
-    btnBlur.draw(false);
-    btnCon.draw(false);
-    btnSharpen.draw(false);
+    updateToolPanelLayout(height);
 
     // status
     fill(230);
@@ -126,72 +86,127 @@ class UI {
     layerListPanel.updateLayout(RightpanelX, RightpanelW, height);
   }
 
-  boolean handleMousePressed(App app, int mx, int my, int btn) {
-    if (mx < RightpanelX && mx > LeftPannelW) return false;
+  ImageIcon loadIcon(String file) {
+    String[] candidates = {
+      "icon/" + file,
+      "icon/" + file + ".png",
+      "icons/" + file,
+      "icons/" + file + ".png"
+    };
+    for (String path : candidates) {
+      PImage p = loadImage(path);
+      if (p != null) {
+        PImage scaled = scaleIcon(p, 26);
+        return new ImageIcon((Image) scaled.getNative());
+      }
+    }
+    println("Icon missing for: " + file + " (looked in data/icon[s]/)");
+    return null;
+  }
 
-    // buttons (generate intents)
-    if (btnOpen.hit(mx, my)) {
-      openFileDialog();
-      return true;
-    }
-    if (btnMove.hit(mx, my)) {
-      app.tools.setTool(new MoveTool());
-      return true;
-    }
-    if (btnCrop.hit(mx, my)) {
-      app.tools.setTool(new CropTool(app.history));
-      return true;
-    }
-    if (btnText.hit(mx, my)) {
-      createTextLayer();
-      return true;
-    }
-    if (btnExport.hit(mx, my)) {
-      if( app.doc == null ) {
-        return true;
-      }
-      exportCanvas();
-      return true;
-    }
-    if (btnUndo.hit(mx, my)) {
-      app.history.undo(app.doc);
-      return true;
-    }
-    if (btnRedo.hit(mx, my)) {
-      app.history.redo(app.doc);
-      return true;
-    }
-    if (btnBlur.hit(mx, my)) {
-      if( app.doc.layers.getActive() == null ) {
-        return true;
-      }
-      app.history.perform(app.doc,new AddFilterCommand(app.doc.layers.getActive(),new GaussianBlurFilter(5,10)));
-      updatePropertiesFromLayer(app.doc.layers.getActive());
-      return true;
-    }
-    if( btnCon.hit(mx, my)) {
-      if( app.doc.layers.getActive() == null ) {
-        return true;
-      }
-      app.history.perform(app.doc,new AddFilterCommand(app.doc.layers.getActive(),new ContrastFilter(1.5)));
-      updatePropertiesFromLayer(app.doc.layers.getActive());
-      return true;
-    }
-    if( btnSharpen.hit(mx, my)) {
-      if( app.doc.layers.getActive() == null ) {
-        return true;
-      }
-      app.history.perform(app.doc,new AddFilterCommand(app.doc.layers.getActive(),new SharpenFilter(1.0)));
-      updatePropertiesFromLayer(app.doc.layers.getActive());
-    }
-    return true; // consume clicks on panel
+  // Keep icons within the toolbar width.
+  PImage scaleIcon(PImage src, int target) {
+    if (src == null) return null;
+    PImage copy = src.get();
+    int maxSide = max(copy.width, copy.height);
+    if (maxSide <= target) return copy;
+    float scale = target / (float) maxSide;
+    int w = max(1, round(copy.width * scale));
+    int h = max(1, round(copy.height * scale));
+    copy.resize(w, h);
+    return copy;
+  }
+  void buildToolPanel() {
+    toolPanel = new JPanel();
+    toolPanel.setLayout(new BoxLayout(toolPanel, BoxLayout.Y_AXIS));
+    toolPanel.setOpaque(true);
+    toolPanel.setBackground(new Color(30, 30, 30)); // match app dark background
+    toolPanel.setBorder(BorderFactory.createEmptyBorder(8, 8, 8, 8));
+
+    addToolButton("import", "Import an image", () -> openFileDialog());
+    addToolButton("hand", "Hand tool to move whole canvas(M)", () -> app.tools.setTool(new MoveTool()));
+    addToolButton("crop", "Crop tool (C)", () -> app.tools.setTool(new CropTool(app.history)));
+    addToolButton("rotate", "Rotate tool (R)", () -> app.tools.setTool(new RotateTool(app.history)));
+    addToolButton("scale", "Scale tool (S)", () -> app.tools.setTool(new ScaleTool(app.history)));
+    addToolButton("text", "Create a text layer", () -> createTextLayer());
+    addToolButton("export", "Export canvas (E)", () -> exportCanvas());
+    addToolButton("undo", "Undo (Ctrl/Cmd+Z)", () -> app.history.undo(app.doc));
+    addToolButton("redo", "Redo (Ctrl/Cmd+Shift+Z)", () -> app.history.redo(app.doc));
+    addToolButton("blur", "Add Gaussian Blur filter", () -> {
+      Layer active = app.doc.layers.getActive();
+      if (active == null) return;
+      app.history.perform(app.doc, new AddFilterCommand(active, new GaussianBlurFilter(5, 10)));
+      updatePropertiesFromLayer(active);
+    });
+    addToolButton("contrast", "Add Contrast filter", () -> {
+      Layer active = app.doc.layers.getActive();
+      if (active == null) return;
+      app.history.perform(app.doc, new AddFilterCommand(active, new ContrastFilter(1.5)));
+      updatePropertiesFromLayer(active);
+    });
+    addToolButton("sharp", "Add Sharpen filter", () -> {
+      Layer active = app.doc.layers.getActive();
+      if (active == null) return;
+      app.history.perform(app.doc, new AddFilterCommand(active, new SharpenFilter(1.0)));
+      updatePropertiesFromLayer(active);
+    });
+
+    attachToolPanelToFrame();
+  }
+
+  void addToolButton(String iconFile, String tooltip, Runnable action) {
+    ImageIcon icon = loadIcon(iconFile);
+    String label = iconFile.length() > 0 ? iconFile.substring(0,1).toUpperCase() + iconFile.substring(1) : "";
+    JButton btn = new JButton(icon);
+    if (icon == null) btn.setText(label);
+    else btn.setText(""); // icon-only when available
+    btn.setHorizontalTextPosition(SwingConstants.CENTER);
+    btn.setVerticalTextPosition(SwingConstants.CENTER);
+    btn.setToolTipText(tooltip);
+    btn.setAlignmentX(Component.CENTER_ALIGNMENT);
+    int btnWidth = max(60, LeftPannelW - 16);
+    int btnHeight = 34;
+    Dimension fixed = new Dimension(btnWidth, btnHeight);
+    btn.setMaximumSize(fixed);
+    btn.setPreferredSize(fixed);
+    btn.setMinimumSize(fixed);
+    btn.setFocusable(false);
+    btn.addActionListener(e -> action.run());
+    btn.setBackground(new Color(80, 80, 80));
+    btn.setForeground(Color.WHITE);
+    btn.setBorder(BorderFactory.createLineBorder(new Color(100, 100, 100)));
+    toolPanel.add(btn);
+    toolPanel.add(Box.createVerticalStrut(6));
+    toolButtons.add(btn);
+  }
+
+  void attachToolPanelToFrame() {
+    PSurfaceAWT surf = (PSurfaceAWT) parent.getSurface();
+    PSurfaceAWT.SmoothCanvas canvas = (PSurfaceAWT.SmoothCanvas) surf.getNative();
+    JFrame frame = (JFrame) canvas.getFrame();
+    frame.getLayeredPane().add(toolPanel, JLayeredPane.PALETTE_LAYER);
+    frame.getLayeredPane().setLayout(null);
+  }
+
+  void updateToolPanelLayout(int parentHeight) {
+    if (toolPanel == null) return;
+    int margin = 8;
+    int w = max(60, LeftPannelW - margin * 2);
+    toolPanel.setBounds(margin, 16, w, parentHeight - 32);
+    toolPanel.revalidate();
+  }
+
+  boolean handleMousePressed(App app, int mx, int my, int btn) {
+    // Swing toolbar + right panel consume clicks; canvas area goes to tools.
+    if (mx < LeftPannelW || mx >= RightpanelX) return true;
+    return false;
   }
 
   boolean handleMouseDragged(App app, int mx, int my, int btn) {
-    return (mx >= RightpanelX);
+    return (mx >= RightpanelX || mx < LeftPannelW);
   }
   boolean handleMouseReleased(App app, int mx, int my, int btn) {
-    return (mx >= RightpanelX);
+    return (mx >= RightpanelX || mx < LeftPannelW);
   }
   boolean handleMouseWheel(App app, float delta) {
     return false;
