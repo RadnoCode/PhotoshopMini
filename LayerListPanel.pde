@@ -10,7 +10,6 @@ class LayerListPanel {
   JList<Layer> list = new JList<Layer>(model);
   JScrollPane scrollPane;
   JButton addButton = new JButton("+");
-  JButton addMaskButton = new JButton("Mask");
   JPanel container = new JPanel(new BorderLayout(6, 6));
 
   final int EYE_W = 28;
@@ -42,21 +41,19 @@ class LayerListPanel {
     list.setForeground(Color.WHITE);
     list.setBorder(BorderFactory.createEmptyBorder(4, 6, 4, 6));
 
-    //select active layers
+    // select active layers
     list.addListSelectionListener(e -> {
       if (isRefreshing || e.getValueIsAdjusting()) return;
       int idx = list.getSelectedIndex();
       int docIdx = viewToDocIndex(idx);
       doc.layers.activeIndex = docIdx;
-      // keep the property panel in sync with the newly selected layer
       if (app != null && app.ui != null) {
         app.ui.updatePropertiesFromLayer(doc.layers.getActive());
       }
-      updateMaskButtonState();
     });
   
 
-    // 鼠标：点眼睛 toggle；双击名字 rename
+    // mouse: click eye to toggle; double click to rename
     list.addMouseListener(new MouseAdapter() {
       public void mousePressed(java.awt.event.MouseEvent e) {
         int idx = list.locationToIndex(e.getPoint());
@@ -67,10 +64,9 @@ class LayerListPanel {
 
         Layer layer = model.getElementAt(idx);
 
-        //点击眼睛区域
+        // click eye area
         if (localX >= 0 && localX <= EYE_W) {
           app.history.perform(doc, new ToggleVisibleCommand(layer));
-          updateMaskButtonState();
           list.repaint();
           return;
         }
@@ -90,13 +86,12 @@ class LayerListPanel {
     });
 
 
-    // Delete：用 Swing Key Binding（别用 processing.event.KeyEvent）
+    // Delete: use Swing key binding (not processing.event.KeyEvent)
     list.addMouseListener(new java.awt.event.MouseAdapter() {
       public void mousePressed(java.awt.event.MouseEvent e) {
         list.requestFocusInWindow();
       }
     });
-
 
 
 
@@ -138,12 +133,8 @@ class LayerListPanel {
     addButton.setMargin(new Insets(2, 8, 2, 8));
     addButton.addActionListener(e -> addBlankLayer());
 
-    addMaskButton.setMargin(new Insets(2, 8, 2, 8));
-    addMaskButton.addActionListener(e -> addMaskToActive());
-
     JPanel actions = new JPanel(new FlowLayout(FlowLayout.RIGHT, 6, 0));
     actions.setOpaque(false);
-    actions.add(addMaskButton);
     actions.add(addButton);
 
     header.add(label, BorderLayout.WEST);
@@ -186,7 +177,6 @@ class LayerListPanel {
     if (viewIdx >= 0) list.setSelectedIndex(viewIdx);
     else list.clearSelection();
 
-    updateMaskButtonState();
     list.repaint();
     isRefreshing = false;
   }
@@ -212,26 +202,6 @@ class LayerListPanel {
     doc.layers.activeIndex = viewToDocIndex(index);
     doc.renderFlags.dirtyComposite = true;
     refresh(doc);
-  }
-  void addMaskToActive() {
-    Layer active = doc.layers.getActive();
-    if (active == null) return;
-    if (active.img == null) return;
-    if (active.mask != null) return;
-
-    active.addMask();
-    doc.renderFlags.dirtyComposite = true;
-    refresh(doc);
-    if (app != null && app.ui != null) {
-      app.ui.updatePropertiesFromLayer(active);
-    }
-    updateMaskButtonState();
-  }
-
-  void updateMaskButtonState() {
-    Layer active = doc.layers.getActive();
-    boolean enabled = active != null && active.img != null && active.mask == null;
-    addMaskButton.setEnabled(enabled);
   }
 
   void addTextLayer() {
@@ -261,7 +231,6 @@ class LayerListPanel {
     protected Transferable createTransferable(JComponent c) {
       sourceIndex = list.getSelectedIndex();
       Layer layer = list.getSelectedValue();
-      //println("起点："+sourceIndex);
       return new StringSelection(layer == null ? "" : ("" + layer.ID));
     }
 
@@ -274,11 +243,8 @@ class LayerListPanel {
       int target = dl.getIndex();
 
       if (target < 0) target = model.getSize();
-      // to [0, size]
       target = Math.max(0, Math.min(target, model.getSize()));
       if (target > sourceIndex) target--;
-
-      //println(sourceIndex+" "+target);
 
       Layer layer = model.getElementAt(sourceIndex);
 
@@ -303,7 +269,6 @@ class LayerListPanel {
     JLabel eyeLabel = new JLabel("", SwingConstants.CENTER);
     JLabel nameLabel = new JLabel("");
     JLabel iconLabel = new JLabel();
-    JLabel maskIconLabel = new JLabel();
     static final int ICON_W = 48;
     static final int ICON_H = 48;
 
@@ -323,31 +288,13 @@ class LayerListPanel {
       iconLabel.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 0));
       iconLabel.setHorizontalAlignment(SwingConstants.CENTER);
 
-      maskIconLabel.setPreferredSize(new Dimension(ICON_W, ICON_H));
-      maskIconLabel.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 0));
-      maskIconLabel.setHorizontalAlignment(SwingConstants.CENTER);
-
-      JPanel thumbRow = new JPanel(new GridLayout(1, 2, 6, 0));
-      thumbRow.setOpaque(false);
-      thumbRow.add(iconLabel);
-      thumbRow.add(maskIconLabel);
-
       add(eyeLabel, BorderLayout.WEST);
       add(nameLabel, BorderLayout.CENTER);
-      add(thumbRow, BorderLayout.EAST);
+      add(iconLabel, BorderLayout.EAST);
     }
   private ImageIcon makeIconFromLayer(Layer layer) {
     if (layer == null) return null;
-    // Ensure a thumbnail exists before rendering the icon.
     PImage thumb = layer.getThumbnail();
-    if (thumb == null) return null;
-    Image img = (Image) thumb.getNative();
-    Image scaled = img.getScaledInstance(ICON_W, ICON_H, Image.SCALE_SMOOTH);
-    return new ImageIcon(scaled);
-  }
-  private ImageIcon makeMaskIconFromLayer(Layer layer) {
-    if (layer == null) return null;
-    PImage thumb = layer.getMaskThumbnail();
     if (thumb == null) return null;
     Image img = (Image) thumb.getNative();
     Image scaled = img.getScaledInstance(ICON_W, ICON_H, Image.SCALE_SMOOTH);
@@ -361,12 +308,10 @@ class LayerListPanel {
       boolean cellHasFocus
     )
     {
-        eyeLabel.setText(layer.visible ? "👁" : "×");
+        eyeLabel.setText(layer.visible ? "O" : "X");
         nameLabel.setText(layer.name);
         ImageIcon icon = makeIconFromLayer(layer);
         iconLabel.setIcon(icon);
-        ImageIcon maskIcon = makeMaskIconFromLayer(layer);
-        maskIconLabel.setIcon(maskIcon);
         Color bg = isSelected ? new Color(80, 80, 80) : list.getBackground();
         setBackground(bg);
 

@@ -266,7 +266,6 @@ class UI {
     if (canReuseActive) {
       active.img = img;
       active.processedImg = img.get();
-      active.out = img.get();
       active.filterdirty = true;
       active.empty=false;
       active.visible = true;

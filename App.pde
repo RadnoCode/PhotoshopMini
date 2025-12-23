@@ -132,14 +132,6 @@ public class App {
         tools.setTool(new ScaleTool(history));
         return;
     }
-    if (k=='p' || k=='P') {
-        tools.setTool(new BrushTool(history,()->SelectedColor,false));
-        return;
-    }
-    if((k=='q'||k=='Q')) {
-        tools.setTool(new BrushTool(history,()->SelectedColor,true));
-        return;
-    }
     /*for test only
     if(k=='b' || k=='B') {
       Layer l= doc.layers.getActive();
