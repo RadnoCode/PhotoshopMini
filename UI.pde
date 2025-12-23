@@ -85,11 +85,15 @@ class UI {
   }
 
   ImageIcon loadIcon(String file) {
+    return loadIcon(file, 26);
+  }
+
+  ImageIcon loadIcon(String file, int targetSize) {
     String path="icon/" + file + ".png";
 
       PImage p = loadImage(path);
       if (p != null) {
-        PImage scaled = scaleIcon(p, 26);
+        PImage scaled = scaleIcon(p, targetSize);
         return new ImageIcon((Image) scaled.getNative());
       }
     println("Icon missing for: " + file + " (looked in data/icon/)");
@@ -101,29 +105,49 @@ class UI {
     if (src == null) return null;
     PImage copy = src.get();
     int maxSide = max(copy.width, copy.height);
-    if (maxSide <= target) return copy;
-    float scale = target / (float) maxSide;
+    if (maxSide == 0) return copy;
+    float scale = target / (float) maxSide; // can upscale to fill the button
     int w = max(1, round(copy.width * scale));
     int h = max(1, round(copy.height * scale));
     copy.resize(w, h);
     return copy;
   }
+
+  void addDivider(JPanel panel) {
+  panel.add(Box.createVerticalStrut(8));
+
+  JPanel line = new JPanel();
+  line.setMaximumSize(new Dimension(Integer.MAX_VALUE, 1));
+  line.setPreferredSize(new Dimension(1, 1));
+  line.setBackground(new Color(255,255,255,25));
+  line.setOpaque(true);
+
+  panel.add(line);
+  panel.add(Box.createVerticalStrut(8));
+}
+
   void buildToolPanel() {
     toolPanel = new JPanel();
     toolPanel.setLayout(new BoxLayout(toolPanel, BoxLayout.Y_AXIS));
     toolPanel.setOpaque(true);
-    toolPanel.setBackground(new Color(30, 30, 30)); // match app dark background
-    toolPanel.setBorder(BorderFactory.createEmptyBorder(8, 8, 8, 8));
+    toolPanel.setBackground(new Color(60, 60, 60)); // match app dark background
+    toolPanel.setBorder(BorderFactory.createEmptyBorder(16, 0, 0, 0)); // remove padding gap
 
     addToolButton("import", "Import an image", () -> openFileDialog());
+    addToolButton("export", "Export canvas (E)", () -> exportCanvas());
+    
+    addDivider(toolPanel);
     addToolButton("hand", "Hand tool to move whole canvas(M)", () -> app.tools.setTool(new MoveTool()));
     addToolButton("crop", "Crop tool (C)", () -> app.tools.setTool(new CropTool(app.history)));
     addToolButton("rotate", "Rotate tool (R)", () -> app.tools.setTool(new RotateTool(app.history)));
     addToolButton("scale", "Scale tool (S)", () -> app.tools.setTool(new ScaleTool(app.history)));
     addToolButton("text", "Create a text layer", () -> createTextLayer());
-    addToolButton("export", "Export canvas (E)", () -> exportCanvas());
+    
+    addDivider(toolPanel);
     addToolButton("undo", "Undo (Ctrl/Cmd+Z)", () -> app.history.undo(app.doc));
     addToolButton("redo", "Redo (Ctrl/Cmd+Shift+Z)", () -> app.history.redo(app.doc));
+    
+    addDivider(toolPanel);
     addToolButton("blur", "Add Gaussian Blur filter", () -> {
       Layer active = app.doc.layers.getActive();
       if (active == null) return;
@@ -147,17 +171,25 @@ class UI {
   }
 
   void addToolButton(String iconFile, String tooltip, Runnable action) {
-    ImageIcon icon = loadIcon(iconFile);
+    
+    int btnWidth = max(60, LeftPannelW - 8);
+    int btnHeight = 40;
+    int iconTarget = max(16, min(btnWidth, btnHeight) - 4); // fill button while keeping square
+
+    ImageIcon icon = loadIcon(iconFile, iconTarget);
     String label = iconFile.length() > 0 ? iconFile.substring(0,1).toUpperCase() + iconFile.substring(1) : "";
     JButton btn = new JButton(icon);
+
+    btn.setBorderPainted(false);
+    btn.setFocusPainted(false);
+    btn.setContentAreaFilled(false); 
+    btn.setOpaque(false);  
     if (icon == null) btn.setText(label);
     else btn.setText(""); // icon-only when available
     btn.setHorizontalTextPosition(SwingConstants.CENTER);
     btn.setVerticalTextPosition(SwingConstants.CENTER);
     btn.setToolTipText(tooltip);
     btn.setAlignmentX(Component.CENTER_ALIGNMENT);
-    int btnWidth = max(60, LeftPannelW - 16);
-    int btnHeight = 34;
     Dimension fixed = new Dimension(btnWidth, btnHeight);
     btn.setMaximumSize(fixed);
     btn.setPreferredSize(fixed);
@@ -182,9 +214,9 @@ class UI {
 
   void updateToolPanelLayout(int parentHeight) {
     if (toolPanel == null) return;
-    int margin = 8;
+    int margin = 0;
     int w = max(60, LeftPannelW - margin * 2);
-    toolPanel.setBounds(margin, 16, w, parentHeight - 32);
+    toolPanel.setBounds(margin, 0, w, parentHeight);
     toolPanel.revalidate();
   }
 
@@ -233,6 +265,8 @@ class UI {
 
     if (canReuseActive) {
       active.img = img;
+      active.processedImg = img.get();
+      active.dirty = true;
       active.empty=false;
       active.visible = true;
       active.x = 0;
@@ -241,6 +275,7 @@ class UI {
       active.scale = 1.0;
       active.pivotX = img.width * 0.5;
       active.pivotY = img.height * 0.5;
+      active.invalidateThumbnail();
       doc.layers.activeIndex = doc.layers.indexOf(active);
     } else {
       Layer l = new Layer(img, doc.layers.getid());

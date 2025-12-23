@@ -270,7 +270,9 @@ class LayerListPanel {
     int eyeW;
     JLabel eyeLabel = new JLabel("", SwingConstants.CENTER);
     JLabel nameLabel = new JLabel("");
-    JLabel indexLabel = new JLabel("");
+    JLabel iconLabel = new JLabel();
+    static final int ICON_W = 48;
+    static final int ICON_H = 48;
 
     LayerCellRenderer(int eyeW) {
       this.eyeW = eyeW;
@@ -284,13 +286,25 @@ class LayerListPanel {
       nameLabel.setForeground(Color.WHITE);
       nameLabel.setBorder(BorderFactory.createEmptyBorder(0, 6, 0, 0));
 
-      indexLabel.setForeground(Color.WHITE);
+      iconLabel.setPreferredSize(new Dimension(ICON_W, ICON_H));
+      iconLabel.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 0));
+      iconLabel.setHorizontalAlignment(SwingConstants.CENTER);
+
+
 
       add(eyeLabel, BorderLayout.WEST);
       add(nameLabel, BorderLayout.CENTER);
-      add(indexLabel,BorderLayout.EAST);
+      add(iconLabel, BorderLayout.EAST);
     }
-
+  private ImageIcon makeIconFromLayer(Layer layer) {
+    if (layer == null) return null;
+    // Ensure a thumbnail exists before rendering the icon.
+    PImage thumb = layer.getThumbnail();
+    if (thumb == null) return null;
+    Image img = (Image) thumb.getNative();
+    Image scaled = img.getScaledInstance(ICON_W, ICON_H, Image.SCALE_SMOOTH);
+    return new ImageIcon(scaled);
+  }
     public Component getListCellRendererComponent(
       JList<? extends Layer> list, 
       Layer layer, 
@@ -301,14 +315,15 @@ class LayerListPanel {
     {
         eyeLabel.setText(layer.visible ? "👁" : "×");
         nameLabel.setText(layer.name);
-        indexLabel.setText(String.valueOf(doc.layers.indexOf(layer)));
-
+        ImageIcon icon = makeIconFromLayer(layer);
+        iconLabel.setIcon(icon);
         Color bg = isSelected ? new Color(80, 80, 80) : list.getBackground();
         setBackground(bg);
 
         return this;
     }
   }
+  
 
   int docToViewIndex(int docIndex) {
     int size = doc.layers.list.size();
