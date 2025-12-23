@@ -261,12 +261,13 @@ class UI {
     if (img == null) return;
 
     Layer active = doc.layers.getActive();
-    boolean canReuseActive = active != null && active.empty&&active.types!="Text";
+    boolean canReuseActive = active != null && active.types!="Text" && active.empty;
 
     if (canReuseActive) {
       active.img = img;
       active.processedImg = img.get();
-      active.dirty = true;
+      active.out = img.get();
+      active.filterdirty = true;
       active.empty=false;
       active.visible = true;
       active.x = 0;

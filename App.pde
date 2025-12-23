@@ -4,6 +4,7 @@ public class App {
   ToolManager tools;
   CommandManager history;
   UI ui;
+  int SelectedColor = color(255, 0, 0, 255);
 
 
   
@@ -129,6 +130,14 @@ public class App {
   
     if (k=='s' || k=='S') {
         tools.setTool(new ScaleTool(history));
+        return;
+    }
+    if (k=='p' || k=='P') {
+        tools.setTool(new BrushTool(history,()->SelectedColor,false));
+        return;
+    }
+    if((k=='q'||k=='Q')) {
+        tools.setTool(new BrushTool(history,()->SelectedColor,true));
         return;
     }
     /*for test only

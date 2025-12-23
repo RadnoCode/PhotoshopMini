@@ -637,7 +637,7 @@ void openColorPicker() {
   }
 
   void markFiltersDirty() {
-    activeLayer.dirty = true;
+    activeLayer.filterdirty = true;
     doc.markChanged();
   }
 

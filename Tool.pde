@@ -331,3 +331,230 @@ class LayerMoveTool implements Tool {
 
   public String name() { return "LayerMove"; }
 }
+class BrushTool implements Tool {
+  CommandManager history;
+  IntSupplier colorSupplier;  // 你 ColorPicker 那边已有 IntSupplier 接口
+  boolean editMask;
+
+  float radius = 18;      // 笔刷半径（像素）
+  float flow = 1.0f;      // 强度 0..1（可以以后接 UI）
+  boolean dragging = false;
+
+  Layer targetLayer = null;
+  PImage targetImg = null;
+  int[] beforePx = null;
+
+  // 记录上一点，用于补点防断线
+  float lastLX, lastLY;
+  boolean hasLast = false;
+
+  BrushTool(CommandManager history, IntSupplier colorSupplier, boolean editMask) {
+    this.history = history;
+    this.colorSupplier = colorSupplier;
+    this.editMask = editMask;
+  }
+
+  public void mousePressed(Document doc, int mx, int my, int btn) {
+    if (btn != LEFT && btn != RIGHT) return;
+
+    targetLayer = doc.layers.getActive();
+    if (targetLayer == null) return;
+    if (targetLayer instanceof TextLayer) return; // 先不刷文本层
+
+    // 确保空层可画
+    targetLayer.ensureRasterForPaint(doc.canvas.width, doc.canvas.height);
+
+    // 选择画在蒙版还是图层像素
+    if (editMask) {
+      if(targetLayer.mask==null) targetLayer.addMask();
+      targetImg = targetLayer.mask;
+    } else {
+      targetImg = targetLayer.img;
+    }
+    if (targetImg == null) return;
+
+    targetImg.loadPixels();
+    beforePx = targetImg.pixels.clone();
+
+    hasLast = false;
+    dragging = true;
+
+    paintAt(doc, mx, my, btn);
+    targetImg.updatePixels();
+    markDirty(doc);
+  }
+
+  public void mouseDragged(Document doc, int mx, int my, int btn) {
+    if (!dragging || targetLayer == null || targetImg == null) return;
+    paintAt(doc, mx, my, btn);
+    targetImg.updatePixels();
+    markDirty(doc);
+  }
+
+  public void mouseReleased(Document doc, int mx, int my, int btn) {
+    if (!dragging || targetLayer == null || targetImg == null) return;
+    dragging = false;
+
+    targetImg.updatePixels();
+    int[] afterPx = targetImg.pixels.clone();
+
+    // 入历史：执行一次也没关系（状态相同）
+    history.perform(doc, new PaintPixelsCommand(targetLayer, editMask, beforePx, afterPx));
+
+    targetLayer = null;
+    targetImg = null;
+    beforePx = null;
+    hasLast = false;
+  }
+
+  public void mouseWheel(Document doc, float delta) {
+    // 保持你项目一致：滚轮缩放视图（如果你想改成调笔刷，也可以换）
+    doc.view.zoomAroundMouse(delta);
+  }
+
+  public void drawOverlay(Document doc) {
+    // 画笔刷圆圈（在 canvas 坐标下）
+    Layer l = doc.layers.getActive();
+    if (l == null) return;
+
+    float cx = doc.view.screenToCanvasX(mouseX);
+    float cy = doc.view.screenToCanvasY(mouseY);
+
+    float rCanvas = radius * l.scale; // 图层缩放会影响屏幕显示尺寸（更像PS）
+    noFill();
+    stroke(255, 200);
+    ellipse(cx, cy, rCanvas * 2, rCanvas * 2);
+  }
+
+  public String name() {
+    return editMask ? "Mask Brush" : "Brush";
+  }
+
+  // ---------------- internal ----------------
+
+  void markDirty(Document doc) {
+    if (targetLayer == null) return;
+    if (editMask) {
+      targetLayer.maskdirty = true;
+      targetLayer.invalidateMaskThumbnail();
+    } else {
+      targetLayer.filterdirty = true;
+      targetLayer.maskdirty = true;
+      targetLayer.invalidateThumbnail();
+    }
+    doc.markChanged();
+  }
+
+  void paintAt(Document doc, int mx, int my, int btn) {
+    // screen -> canvas
+    float cx = doc.view.screenToCanvasX(mx);
+    float cy = doc.view.screenToCanvasY(my);
+
+    // canvas -> layer local (image pixel space)
+    PVector lp = targetLayer.canvasToLocal(cx, cy);
+    float lx = lp.x;
+    float ly = lp.y;
+
+    if (!hasLast) {
+      dab(lx, ly, btn);
+      lastLX = lx; lastLY = ly;
+      hasLast = true;
+      return;
+    }
+
+    float dx = lx - lastLX;
+    float dy = ly - lastLY;
+    float dist = sqrt(dx*dx + dy*dy);
+
+    float step = max(1, radius * 0.35f);
+    int steps = max(1, ceil(dist / step));
+
+    for (int s = 1; s <= steps; s++) {
+      float t = s / (float)steps;
+      dab(lerp(lastLX, lx, t), lerp(lastLY, ly, t), btn);
+    }
+
+    lastLX = lx; lastLY = ly;
+  }
+
+  void dab(float lx, float ly, int btn) {
+    int w = targetImg.width;
+    int h = targetImg.height;
+
+    int cx = round(lx);
+    int cy = round(ly);
+    int r = max(1, round(radius));
+    int rr = r * r;
+
+    int x0 = max(0, cx - r);
+    int x1 = min(w - 1, cx + r);
+    int y0 = max(0, cy - r);
+    int y1 = min(h - 1, cy + r);
+
+    int brushCol = (colorSupplier != null) ? colorSupplier.getAsInt() : color(255);
+
+    for (int y = y0; y <= y1; y++) {
+      int dy = y - cy;
+      for (int x = x0; x <= x1; x++) {
+        int dx = x - cx;
+        if (dx*dx + dy*dy > rr) continue;
+
+        int idx = y*w + x;
+
+        // 简单硬边强度（以后想软边，就让 strength 随距离衰减）
+        float strength = flow;
+
+        if (editMask) {
+          // 蒙版：根据当前画笔颜色亮度写入 alpha，右键强制擦为 0
+          int curA = (targetImg.pixels[idx] >>> 24) & 0xFF;
+          int targetA;
+          if (btn == RIGHT) {
+            targetA = 0;
+          } else {
+            int col = (colorSupplier != null) ? colorSupplier.getAsInt() : color(255);
+            int sr = (col >>> 16) & 0xFF;
+            int sg = (col >>> 8) & 0xFF;
+            int sb = (col) & 0xFF;
+            int sa = (col >>> 24) & 0xFF;
+            int lum = (int)(0.299f * sr + 0.587f * sg + 0.114f * sb + 0.5f);
+            // 同时考虑颜色自身透明度
+            targetA = (sa * lum + 127) / 255;
+          }
+          int newA = (int)(curA + (targetA - curA) * strength + 0.5f);
+          targetImg.pixels[idx] = (newA << 24) | 0x00FFFFFF;
+        } else {
+          // 普通图层：左画色，右当橡皮（擦透明）
+          int dst = targetImg.pixels[idx];
+          int da = (dst >>> 24) & 0xFF;
+
+          if (btn == RIGHT) {
+            // 橡皮：把 alpha 往 0 推
+            int newA = (int)(da * (1.0f - strength) + 0.5f);
+            targetImg.pixels[idx] = (dst & 0x00FFFFFF) | (newA << 24);
+          } else {
+            int sr = (brushCol >>> 16) & 0xFF;
+            int sg = (brushCol >>> 8) & 0xFF;
+            int sb = (brushCol) & 0xFF;
+            int sa0 = (brushCol >>> 24) & 0xFF;
+
+            float sa = (sa0 / 255.0f) * strength;
+            float inv = 1.0f - sa;
+
+            int dr = (dst >>> 16) & 0xFF;
+            int dg = (dst >>> 8) & 0xFF;
+            int db = (dst) & 0xFF;
+
+            int nr = (int)(sr * sa + dr * inv + 0.5f);
+            int ng = (int)(sg * sa + dg * inv + 0.5f);
+            int nb = (int)(sb * sa + db * inv + 0.5f);
+
+            float daF = da / 255.0f;
+            int na = (int)(((sa + daF * inv) * 255.0f) + 0.5f);
+
+            targetImg.pixels[idx] = (na << 24) | (nr << 16) | (ng << 8) | nb;
+          }
+        }
+      }
+    }
+  }
+}

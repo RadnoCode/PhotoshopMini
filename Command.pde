@@ -466,14 +466,14 @@ class AddFilterCommand implements Command {
   public void execute(Document doc) {
     filter.layer = layer;
     layer.filters.add(filter);
-    layer.dirty = true;
+    layer.filterdirty = true;
     doc.markChanged();
   }
 
   public void undo(Document doc) {
     layer.filters.remove(filter);
     filter.layer = null;
-    layer.dirty = true;
+    layer.filterdirty = true;
     doc.markChanged();
   }
 
@@ -493,14 +493,14 @@ class RemoveFilterCommand implements Command {
   public void execute(Document doc) {
     layer.filters.remove(filter);
     filter.layer = null;
-    layer.dirty = true;
+    layer.filterdirty = true;
     doc.markChanged();
   }
 
   public void undo(Document doc) {
     filter.layer = layer;
     layer.filters.add(filter);
-    layer.dirty = true;
+    layer.filterdirty = true;
     doc.markChanged();
   }
 
@@ -525,7 +525,7 @@ class BlurChangeCommand implements Command {
     filter.radius = aR;
     filter.sigma = aS;
     filter.change = true;
-    if (filter.layer != null) filter.layer.dirty = true;
+    if (filter.layer != null) filter.layer.filterdirty = true;
     doc.markChanged();
   }
 
@@ -533,7 +533,7 @@ class BlurChangeCommand implements Command {
     filter.radius = bR;
     filter.sigma = bS;
     filter.change = true;
-    if (filter.layer != null) filter.layer.dirty = true;
+    if (filter.layer != null) filter.layer.filterdirty = true;
     doc.markChanged();
   }
 
@@ -554,13 +554,13 @@ class ContrastChangeCommand implements Command {
 
   public void execute(Document doc) {
     filter.value = after;
-    if (filter.layer != null) filter.layer.dirty = true;
+    if (filter.layer != null) filter.layer.filterdirty = true;
     doc.markChanged();
   }
 
   public void undo(Document doc) {
     filter.value = before;
-    if (filter.layer != null) filter.layer.dirty = true;
+    if (filter.layer != null) filter.layer.filterdirty = true;
     doc.markChanged();
   }
 
@@ -581,13 +581,13 @@ class SharpenChangeCommand implements Command {
 
   public void execute(Document doc) {
     filter.value = after;
-    if (filter.layer != null) filter.layer.dirty = true;
+    if (filter.layer != null) filter.layer.filterdirty = true;
     doc.markChanged();
   }
 
   public void undo(Document doc) {
     filter.value = before;
-    if (filter.layer != null) filter.layer.dirty = true;
+    if (filter.layer != null) filter.layer.filterdirty = true;
     doc.markChanged();
   }
 
@@ -623,5 +623,49 @@ class layerMoveCommand implements Command {
 
   public String name() {
     return "Move Layer Position";
+  }
+}
+class PaintPixelsCommand implements Command {
+  Layer layer;
+  boolean onMask;
+  int[] beforePx;
+  int[] afterPx;
+
+  PaintPixelsCommand(Layer layer, boolean onMask, int[] beforePx, int[] afterPx) {
+    this.layer = layer;
+    this.onMask = onMask;
+    this.beforePx = beforePx;
+    this.afterPx = afterPx;
+  }
+
+  public void execute(Document doc) { apply(doc, afterPx); }
+  public void undo(Document doc)    { apply(doc, beforePx); }
+
+  void apply(Document doc, int[] px) {
+    if (layer == null) return;
+
+    PImage target = onMask ? layer.mask : layer.img;
+    if (target == null) return;
+
+    target.loadPixels();
+    int n = min(px.length, target.pixels.length);
+    arrayCopy(px, 0, target.pixels, 0, n);
+    target.updatePixels();
+
+    // 标记重算
+    if (onMask) {
+      layer.maskdirty = true;
+      layer.invalidateMaskThumbnail();
+    } else {
+      layer.filterdirty = true;     // 让 processedImg 重新生成（含滤镜）
+      layer.maskdirty = true;       // out 也需要重算
+      layer.invalidateThumbnail();
+    }
+
+    doc.markChanged();
+  }
+
+  public String name() {
+    return onMask ? "Paint Mask" : "Brush Stroke";
   }
 }
