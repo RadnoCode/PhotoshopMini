@@ -45,11 +45,21 @@ CanvasSpec promptForCanvasSize() {
   // Ensure ratio starts simplified with defaults.
   updateRatio.run();
 
-  JPanel fields = new JPanel(new GridLayout(2, 2, 8, 8));
-  fields.add(new JLabel("Width (px)"));
-  fields.add(widthField);
-  fields.add(new JLabel("Height (px)"));
-  fields.add(heightField);
+  JPanel fields = new JPanel(new GridBagLayout());
+  GridBagConstraints gc = new GridBagConstraints();
+  gc.insets=new Insets(8,8,8,8);
+  gc.gridy=0;
+  gc.gridx=0;
+  gc.fill = GridBagConstraints.HORIZONTAL;
+
+  fields.add(new JLabel("Width (px)"),gc);
+  gc.gridx=1;
+  fields.add(widthField,gc);
+  gc.gridy=1;
+  gc.gridx=0;
+  fields.add(new JLabel("Height (px)"),gc);
+  gc.gridx=1;
+  fields.add(heightField,gc);
 
   JPanel previewHolder = new JPanel(new BorderLayout());
   previewHolder.setPreferredSize(new Dimension(220, 160));
@@ -119,7 +129,7 @@ class AspectPreviewPanel extends JPanel {
     setPreferredSize(new Dimension(220, 160));
   }
 
-  protected void paintComponent(Graphics g) {
+  void paintComponent(Graphics g) {
     super.paintComponent(g);
     Graphics2D g2 = (Graphics2D) g;
     int widthVal = parsePositiveInt(wField.getText(), 1920);
@@ -168,19 +178,12 @@ void setupFlatLaf() {
   }
 }
 static void setupTextFieldStyle() {
-  UIManager.put("Component.arc", 12);
-
+  UIManager.put("Component.arc", 8);
   UIManager.put("Component.focusWidth", 1);
   UIManager.put("Component.innerFocusWidth", 0);
-
-  UIManager.put("TextField.margin", new Insets(6, 10, 6, 10));
-  UIManager.put("PasswordField.margin", new Insets(6, 10, 6, 10));
-  UIManager.put("FormattedTextField.margin", new Insets(6, 10, 6, 10));
-
+  UIManager.put("TextComponent.margin", new Insets(3, 8, 3, 8));
   UIManager.put("TextComponent.selectionBackground", new Color(120, 120, 120, 140));
   UIManager.put("TextComponent.selectionForeground", Color.WHITE);
-
-  // 光标颜色
   UIManager.put("TextComponent.caretForeground", new Color(230, 230, 230));
 }
 static void setupButtonStyle() {
@@ -214,9 +217,27 @@ static void setupListStyle(){
   UIManager.put("List.selectionForeground", Color.WHITE);
   UIManager.put("List.background", new Color(60, 60, 60));
   UIManager.put("List.foreground", new Color(220, 220, 220));
+  UIManager.put("List.focusCellHighlightBorder", BorderFactory.createEmptyBorder());
+  UIManager.put("List.cellPadding", new Insets(8,10,8,10));
 
-// 焦点不要抢戏
-UIManager.put("List.focusCellHighlightBorder", BorderFactory.createEmptyBorder());
+}
+static void setupCombox(){
+  UIManager.put("Component.arc", 10);
+  UIManager.put("ComboBox.arc", 10);
+  UIManager.put("ComboBox.padding", new Insets(2,6,1,6));
+  UIManager.put("ComboBox.sizeVariant", "small");
+  UIManager.put("ComboBox.buttonSeparatorWidth", 0);
+  UIManager.put("ComboBox.maximumRowCount", 12);
+}
+static void setupSpinner(){
+  UIManager.put("Spinner.sizeVariant", "small");
+  UIManager.put("Spinner.minimumHeight", 24);
+  UIManager.put("Spinner.maximumHeight", 26);
+  UIManager.put("TextComponent.sizeVariant", "small");
+  UIManager.put("TextComponent.margin", new Insets(4, 6, 4, 6));
+  UIManager.put("Component.focusWidth", 1);
+  UIManager.put("Component.innerFocusWidth", 0);
+
 }
 void setup() {
   setupFlatLaf();
@@ -226,6 +247,9 @@ void setup() {
   setupTextFieldStyle();
   setupButtonStyle();
   setupListStyle();
+  setupCombox();
+  UIManager.put("Component.focusWidth", 1);
+  UIManager.put("Component.innerFocusWidth", 0);
   surface.setTitle("Photosoup");
   CanvasSpec spec = promptForCanvasSize();
   Document doc = new Document(spec.width, spec.height);

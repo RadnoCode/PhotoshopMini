@@ -21,8 +21,12 @@ class PropertiesPanel {
 
   // Transform controls
   JPanel transformContent;
-  JTextField fieldX, fieldY, fieldRotation, fieldScale, fieldOpacity, fieldText;
+  JTextField fieldX, fieldY, fieldRotation, fieldScale, fieldOpacity;
   JSlider sliderX, sliderY, sliderRotation, sliderScale, sliderOpacity;
+
+  // Text controls
+  JPanel textContent;
+  JTextField fieldText;
   JComboBox<String> comboFont;
   JSpinner spinnerFontSize;
   JButton btnTextColor;
@@ -52,10 +56,10 @@ class PropertiesPanel {
     tabs = new JTabbedPane();
     tabs.setBackground(bgRoot);
     tabs.setForeground(fgText);
-    tabs.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, new Color(60, 60, 60)));
-    tabs.setOpaque(true);
+    tabs.setOpaque(false);
 
     buildTransformTab();
+    buildTextTab();
     buildFilterTab();
 
     root.add(tabs, BorderLayout.CENTER);
@@ -106,56 +110,6 @@ class PropertiesPanel {
     transformContent.add(Box.createVerticalStrut(8));
     transformContent.add(opacityBlock);
 
-    // Text related controls
-    JPanel textPanel = new JPanel();
-    textPanel.setLayout(new GridLayout(4, 2, 6, 6));
-    textPanel.setOpaque(true);
-    textPanel.setBackground(bgBlock);
-    textPanel.setBorder(BorderFactory.createEmptyBorder());
-
-    JLabel labelText = makeLabel("Text");
-    fieldText = styledField("");
-    fieldText.addActionListener(e -> applyTextChange());
-    fieldText.addFocusListener(new java.awt.event.FocusAdapter() {
-      public void focusLost(java.awt.event.FocusEvent e) { applyTextChange(); }
-    });
-
-    JLabel labelFont = makeLabel("Font");
-    String[] fontOptions = { "Arial", "Helvetica", "Courier", "Times New Roman" };
-    comboFont = new JComboBox<String>(fontOptions);
-    comboFont.setBackground(bgBlock);
-    comboFont.setForeground(fgText);
-    comboFont.setBorder(BorderFactory.createLineBorder(new Color(70, 70, 70)));
-    comboFont.addActionListener(e -> applyFontNameChange());
-
-    JLabel labelSize = makeLabel("Size");
-    spinnerFontSize = new JSpinner(new SpinnerNumberModel(48, 6, 400, 2));
-    styleSpinner(spinnerFontSize);
-    spinnerFontSize.addChangeListener(e -> applyFontSizeChange());
-
-    JLabel labelColor = makeLabel("Color");
-    btnTextColor = new JButton();
-    btnTextColor.setOpaque(true);
-    btnTextColor.setBorder(BorderFactory.createLineBorder(new Color(70, 70, 70)));
-    Dimension colorDim = new Dimension(60, spinnerFontSize.getPreferredSize().height);
-    btnTextColor.setPreferredSize(colorDim);
-    btnTextColor.setMinimumSize(colorDim);
-    btnTextColor.setMaximumSize(colorDim);
-    btnTextColor.addActionListener(e -> openColorPicker());
-    textPanel.add(labelText);
-    textPanel.add(fieldText);
-    textPanel.add(labelFont);
-    textPanel.add(comboFont);
-    textPanel.add(labelSize);
-    textPanel.add(spinnerFontSize);
-    textPanel.add(labelColor);
-    textPanel.add(btnTextColor);
-
-    JPanel textBlock = makeSectionBlock("Text");
-    textBlock.add(textPanel);
-    transformContent.add(Box.createVerticalStrut(8));
-    transformContent.add(textBlock);
-
     JScrollPane transformScroll = new JScrollPane(transformContent);
     transformScroll.setBorder(BorderFactory.createEmptyBorder());
     transformScroll.getViewport().setBackground(bgPanel);
@@ -163,6 +117,102 @@ class PropertiesPanel {
     transformScroll.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED);
     tabs.addTab("Transform", transformScroll);
   }
+
+void buildTextTab() {
+  textContent = new JPanel();
+  textContent.setLayout(new BoxLayout(textContent, BoxLayout.Y_AXIS));
+  textContent.setBackground(bgPanel);
+  textContent.setBorder(BorderFactory.createEmptyBorder(8, 5, 8, 15));
+  textContent.setMaximumSize(new Dimension(300, 300));
+
+  // --- grid bag: 不强行拉高每行 ---
+  JPanel textPanel = new JPanel(new GridBagLayout());
+  textPanel.setOpaque(false);
+  textPanel.setBorder(BorderFactory.createEmptyBorder());
+
+  GridBagConstraints gc = new GridBagConstraints();
+  gc.insets = new Insets(6, 6, 6, 6);             // 行间距更紧凑
+  gc.gridy = 0;
+  gc.fill = GridBagConstraints.HORIZONTAL;
+
+  // ---- Row 1: Text ----
+  JLabel labelText = makeLabel("Text");
+  fieldText = styledField("");
+  fieldText.putClientProperty("JComponent.sizeVariant", "small");
+  fieldText.addActionListener(e -> applyTextChange());
+  fieldText.addFocusListener(new java.awt.event.FocusAdapter() {
+    public void focusLost(java.awt.event.FocusEvent e) { applyTextChange(); }
+  });
+
+  gc.gridx = 0; gc.weightx = 0; gc.anchor = GridBagConstraints.WEST;
+  textPanel.add(labelText, gc);
+  gc.gridx = 1; gc.weightx = 1;
+  textPanel.add(fieldText, gc);
+
+  // ---- Row 2: Font ----
+  JLabel labelFont = makeLabel("Font");
+  String[] fontOptions = { "Arial", "Helvetica", "Courier", "Times New Roman" };
+  comboFont = new JComboBox<String>(fontOptions);
+  comboFont.putClientProperty("JComponent.sizeVariant", "small");
+  comboFont.addActionListener(e -> applyFontNameChange());
+
+  gc.gridy++;
+  gc.gridx = 0; gc.weightx = 0;
+  textPanel.add(labelFont, gc);
+  gc.gridx = 1; gc.weightx = 1;
+  textPanel.add(comboFont, gc);
+
+  // ---- Row 3: Size ----
+  JLabel labelSize = makeLabel("Size");
+  spinnerFontSize = new JSpinner(new SpinnerNumberModel(48, 6, 400, 2));
+  spinnerFontSize.putClientProperty("JComponent.sizeVariant", "small");
+  styleSpinner(spinnerFontSize);                 // 你已有的 Flat spinner 美化
+  spinnerFontSize.addChangeListener(e -> applyFontSizeChange());
+
+  gc.gridy++;
+  gc.gridx = 0; gc.weightx = 0;
+  textPanel.add(labelSize, gc);
+  gc.gridx = 1; gc.weightx = 1;
+  textPanel.add(spinnerFontSize, gc);
+
+  // ---- Row 4: Color ----
+  JLabel labelColor = makeLabel("Color");
+  btnTextColor = new JButton();
+  btnTextColor.putClientProperty("JComponent.roundRect", true);
+  btnTextColor.putClientProperty("JComponent.sizeVariant", "small");
+
+  int colorH = 24; 
+  Dimension colorDim = new Dimension(60, colorH);
+  btnTextColor.setPreferredSize(colorDim);
+  btnTextColor.addActionListener(e -> openColorPicker());
+
+  gc.gridy++;
+  gc.gridx = 0; gc.weightx = 0;
+  textPanel.add(labelColor, gc);
+  gc.gridx = 1; gc.weightx = 1;
+  textPanel.add(btnTextColor, gc);
+  gc.gridy++;
+  gc.gridx = 0;
+  gc.gridwidth = 2;
+  gc.weightx = 1;
+  gc.weighty = 1;            
+  gc.fill = GridBagConstraints.BOTH;
+  textPanel.add(Box.createVerticalGlue(), gc);
+
+  JPanel textBlock = makeSectionBlock("Text");
+  textBlock.add(textPanel);
+  textContent.add(textBlock);
+
+  // --- scroll ---
+  JScrollPane textScroll = new JScrollPane(textContent);
+  textScroll.setBorder(BorderFactory.createEmptyBorder());
+  textScroll.getViewport().setBackground(bgPanel);
+  textScroll.getVerticalScrollBar().setUnitIncrement(12);
+  textScroll.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+
+  tabs.addTab("Text", textScroll);
+}
+
 
   void buildFilterTab() {
     filterContent = new JPanel();
@@ -431,51 +481,51 @@ class PropertiesPanel {
 
 
 
-void openColorPicker() {
-  if (isUpdating) return;
-  if (!(activeLayer instanceof TextLayer)) return;
-  TextLayer tl = (TextLayer) activeLayer;
+  void openColorPicker() {
+    if (isUpdating) return;
+    if (!(activeLayer instanceof TextLayer)) return;
+    TextLayer tl = (TextLayer) activeLayer;
 
-  int initialCol = tl.fillCol;
-  final boolean[] committed = new boolean[] { false };
+    int initialCol = tl.fillCol;
+    final boolean[] committed = new boolean[] { false };
 
-  ColorPickerDialog dlg = new ColorPickerDialog(
-    SwingUtilities.getWindowAncestor(root),
-    initialCol,
-    (previewCol) -> {
-      // Live preview without flooding history.
-      if (isUpdating) return;
-      isUpdating = true;
-      tl.setFillCol(previewCol);
-      updateColorSwatch(previewCol);
-      doc.markChanged();
-      isUpdating = false;
-    },
-    (commitCol) -> {
-      committed[0] = true;
-      applyTextColorChange(commitCol);
-    }
-  );
-
-  dlg.addWindowListener(new java.awt.event.WindowAdapter() {
-    @Override public void windowClosing(java.awt.event.WindowEvent e) {
-      if (!committed[0]) {
-        tl.setFillCol(initialCol);
-        updateColorSwatch(initialCol);
+    ColorPickerDialog dlg = new ColorPickerDialog(
+      SwingUtilities.getWindowAncestor(root),
+      initialCol,
+      (previewCol) -> {
+        // Live preview without flooding history.
+        if (isUpdating) return;
+        isUpdating = true;
+        tl.setFillCol(previewCol);
+        updateColorSwatch(previewCol);
         doc.markChanged();
+        isUpdating = false;
+      },
+      (commitCol) -> {
+        committed[0] = true;
+        applyTextColorChange(commitCol);
       }
-    }
-    @Override public void windowClosed(java.awt.event.WindowEvent e) {
-      if (!committed[0]) {
-        tl.setFillCol(initialCol);
-        updateColorSwatch(initialCol);
-        doc.markChanged();
-      }
-    }
-  });
+    );
 
-  dlg.setVisible(true);
-}
+    dlg.addWindowListener(new java.awt.event.WindowAdapter() {
+      @Override public void windowClosing(java.awt.event.WindowEvent e) {
+        if (!committed[0]) {
+          tl.setFillCol(initialCol);
+          updateColorSwatch(initialCol);
+          doc.markChanged();
+        }
+      }
+      @Override public void windowClosed(java.awt.event.WindowEvent e) {
+        if (!committed[0]) {
+          tl.setFillCol(initialCol);
+          updateColorSwatch(initialCol);
+          doc.markChanged();
+        }
+      }
+    });
+
+    dlg.setVisible(true);
+  }
 
 
   void applyTextColorChange(int col) {
@@ -500,6 +550,7 @@ void openColorPicker() {
     JPanel panel = new JPanel();
     panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
     panel.setAlignmentX(Component.LEFT_ALIGNMENT);
+    panel.setPreferredSize(new Dimension(280,150));
     panel.setMaximumSize(new Dimension(280, Integer.MAX_VALUE));
     panel.setOpaque(true);
     panel.setBackground(bgBlock);
@@ -516,8 +567,10 @@ void openColorPicker() {
     header.setFont(header.getFont().deriveFont(Font.BOLD));
     header.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 0));
     head.add(header);
+    head.setMaximumSize(new Dimension(Integer.MAX_VALUE,32));
     panel.add(head);
     return panel;
+
 }
 
 
@@ -559,21 +612,15 @@ void openColorPicker() {
     return makeSectionBlock(title);
   }
 
-  JTextField styledField(String text) {
-    JTextField field = new JTextField(text, 5);
-    field.setBackground(bgBlock);
-    field.setForeground(fgText);
-    field.setBorder(BorderFactory.createLineBorder(new Color(70, 70, 70)));
-    return field;
-  }
+JTextField styledField(String text) {
+  JTextField field = new JTextField(text, 5);
+  return field;
+}
+
 
   void styleSpinner(JSpinner spinner) {
-    spinner.setBorder(BorderFactory.createLineBorder(new Color(70, 70, 70)));
     if (spinner.getEditor() instanceof JSpinner.DefaultEditor) {
       JSpinner.DefaultEditor editor = (JSpinner.DefaultEditor) spinner.getEditor();
-      editor.getTextField().setBackground(bgBlock);
-      editor.getTextField().setForeground(fgText);
-      editor.getTextField().setBorder(BorderFactory.createEmptyBorder(2, 4, 2, 4));
     }
   }
 

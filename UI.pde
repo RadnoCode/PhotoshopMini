@@ -30,14 +30,8 @@ class UI {
     this.doc = doc;
     this.app = app;
     buildToolPanel();
-
-    //初始化图层面板
     layerListPanel = new LayerListPanel(parent, doc, RightpanelX, RightpanelW, 0);
-
-    // 初始化属性面板（多标签页）
     propertiesPanel = new PropertiesPanel(parent, doc, app, this.layerListPanel.container);
-
-    // 默认导出目录：优先桌面，找不到则放到工程目录下的 exports
     lastExportDir = new File(System.getProperty("user.home"), "Desktop");
     if (!lastExportDir.exists() || !lastExportDir.isDirectory()) {
       lastExportDir = new File(parent.sketchPath("exports"));
@@ -49,22 +43,15 @@ class UI {
     RightpanelX = width - RightpanelW;
     updateToolPanelLayout(height);
 
-    // status
+    // statu
     fill(230);
     textSize(12);
     text("Active Tool: " + tools.activeName(), RightpanelX + 12, height - 70);
     text("X-axis: " + /*history.undoCount()*/mouseX, RightpanelX + 12, height - 50);
     text("Y-axis: " + /*history.redoCount()*/mouseY, RightpanelX + 12, height - 30);
-
-    // 隐藏/重置属性面板
     Layer active = doc.layers.getActive();
-    // 核心逻辑：如果没有活跃图层，隐藏 Java Swing 的属性面板
     if (active == null) {
       if (propertiesPanel != null) propertiesPanel.setVisible(false);
-      // 可以在原本显示属性的地方画一些提示文字
-      fill(100);
-      textSize(12);
-      text("Select a layer to edit properties", RightpanelX + 12, layerListPanel.topY - 20);
     } else {
       if (propertiesPanel != null) {
         propertiesPanel.setVisible(true);
@@ -141,7 +128,7 @@ class UI {
     panel.add(Box.createVerticalStrut(8));
 
     JPanel line = new JPanel();
-    line.setMaximumSize(new Dimension(Integer.MAX_VALUE, 1));
+    line.setMaximumSize(new Dimension(Integer.MAX_VALUE, 2));
     line.setPreferredSize(new Dimension(1, 1));
     line.setBackground(new Color(255,255,255,25));
     line.setOpaque(true);
@@ -158,7 +145,7 @@ class UI {
     Icon icon = loadIcon(iconFile, iconTarget);
     String label = iconFile.length() > 0 ? iconFile.substring(0, 1).toUpperCase() + iconFile.substring(1): "";
     JButton btn = new JButton();
-    // --- icon / text 兜底逻辑 ---
+    // --- icon / text  ---
     if (icon != null) {
       btn.setIcon(icon);
       btn.setText("");
@@ -168,12 +155,9 @@ class UI {
       btn.setFont(btn.getFont().deriveFont(Font.BOLD, 13f));
     }
     btn.putClientProperty("JButton.buttonType", "toolBarButton");
-    btn.setContentAreaFilled(true);
-    btn.setBorderPainted(false);
     btn.setFocusPainted(false);
     btn.setFocusable(false);
     btn.setRolloverEnabled(true);
-    btn.setOpaque(true);
     if (icon == null) btn.setText(label);
     else btn.setText("");
     btn.setToolTipText(tooltip);
@@ -190,7 +174,7 @@ class UI {
     toolButtons.add(btn);
     return btn;
 }
-  
+
   void buildToolPanel() {
     toolPanel = new JPanel();
     toolPanel.setLayout(new BoxLayout(toolPanel, BoxLayout.Y_AXIS));
