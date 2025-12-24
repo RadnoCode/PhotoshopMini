@@ -198,23 +198,23 @@ class UI {
     toolPanel.setBackground(new Color(60, 60, 60)); // match app dark background
     toolPanel.setBorder(BorderFactory.createEmptyBorder(16, 0, 0, 0)); // remove padding gap
 
-    addToolButton(toolPanel,"import", "Import an image", () -> openFileDialog(),SizeFirst);
+    addToolButton(toolPanel,"import", "Import image(I)", () -> openFileDialog(),SizeFirst);
     addToolButton(toolPanel,"export", "Export canvas (E)", () -> exportCanvas(),SizeFirst);
     
     addDivider(toolPanel);
-    addToolButton(toolPanel,"hand", "Hand tool to move whole canvas(M)", () -> app.tools.setTool(new MoveTool()),SizeFirst);
-    addToolButton(toolPanel, "move", "Move Layer (V)", () -> app.tools.setTool(new LayerMoveTool(app.history)),SizeFirst);
-    addToolButton(toolPanel, "crop", "Crop tool (C)", () -> app.tools.setTool(new CropTool(app.history)),SizeFirst);
-    addToolButton(toolPanel, "rotate", "Rotate tool (R)", () -> app.tools.setTool(new RotateTool(app.history)),SizeFirst);
-    addToolButton(toolPanel, "scale", "Scale tool (S)", () -> app.tools.setTool(new ScaleTool(app.history)),SizeFirst);
-    addToolButton(toolPanel, "text", "Create a text layer", () -> createTextLayer(),SizeFirst);
+    addToolButton(toolPanel,"hand", "Hand tool\nUse hand to move whole canvas", () -> app.tools.setTool(new MoveTool()),SizeFirst);
+    addToolButton(toolPanel, "move", "Move Toll\nUse move to move layer's position (V)", () -> app.tools.setTool(new LayerMoveTool(app.history)),SizeFirst);
+    addToolButton(toolPanel, "crop", "Crop tool (C)\nCrop the whole canvas", () -> app.tools.setTool(new CropTool(app.history)),SizeFirst);
+    addToolButton(toolPanel, "rotate", "Rotate tool (R)\nRotate the layer", () -> app.tools.setTool(new RotateTool(app.history)),SizeFirst);
+    addToolButton(toolPanel, "scale", "Scale tool (S)\nScale the layer", () -> app.tools.setTool(new ScaleTool(app.history)),SizeFirst);
+    addToolButton(toolPanel, "text", "Text tool(T)\nCreate a text layer. Edit it in properties panel", () -> createTextLayer(),SizeFirst);
     
     addDivider(toolPanel);
     addToolButton(toolPanel,"undo", "Undo (Ctrl/Cmd+Z)", () -> app.history.undo(app.doc),SizeFirst);
     addToolButton(toolPanel,"redo", "Redo (Ctrl/Cmd+Shift+Z)", () -> app.history.redo(app.doc),SizeFirst);
 
     addDivider(toolPanel);
-    filterButton = addToolButton(toolPanel,"filter", "Filters", () -> toggleFilterPanel(),SizeFirst);
+    filterButton = addToolButton(toolPanel,"filter", "Filters Tool\nClick to chose a filter added to selected layer.Adjust filter in filter panel", () -> toggleFilterPanel(),SizeFirst);
     buildFilterPanel();
 
     attachToolPanelToFrame();
