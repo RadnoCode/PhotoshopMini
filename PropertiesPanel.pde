@@ -151,9 +151,11 @@ void buildTextTab() {
 
   // ---- Row 2: Font ----
   JLabel labelFont = makeLabel("Font");
-  String[] fontOptions = { "Arial", "Helvetica", "Courier", "Times New Roman" };
+  GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
+  String[] fontOptions = ge.getAvailableFontFamilyNames();
   comboFont = new JComboBox<String>(fontOptions);
   comboFont.putClientProperty("JComponent.sizeVariant", "small");
+  comboFont.setMaximumRowCount(12);
   comboFont.addActionListener(e -> applyFontNameChange());
 
   gc.gridy++;
