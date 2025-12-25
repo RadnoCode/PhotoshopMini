@@ -1,3 +1,8 @@
+import java.awt.KeyEventDispatcher;
+import java.awt.KeyboardFocusManager;
+import java.awt.event.KeyEvent;
+import javax.swing.text.JTextComponent;
+
 public class App {
   Document doc;
   Renderer renderer;
@@ -22,6 +27,7 @@ public class App {
     tools = new ToolManager();
     history = new CommandManager();
     ui = new UI(parent, this.doc, this);
+    installGlobalShortcuts();
 
     // Keep UI widgets in sync after any history change (perform/undo/redo).
     history.setListener(new CommandListener() {
@@ -37,6 +43,42 @@ public class App {
 
     tools.setTool(new MoveTool()); // When you enter, defualtly choose MoveTool 默认移动工具
   }// Constructor: Initializes the five core modules
+
+  // Allow core shortcuts to work even when Swing panels hold focus.
+  void installGlobalShortcuts() {
+    KeyboardFocusManager.getCurrentKeyboardFocusManager().addKeyEventDispatcher(new KeyEventDispatcher() {
+      public boolean dispatchKeyEvent(java.awt.event.KeyEvent e) {
+        if (e.getID() != KeyEvent.KEY_PRESSED) return false;
+
+        Component focus = KeyboardFocusManager.getCurrentKeyboardFocusManager().getFocusOwner();
+        // Let Processing handle keys normally when the canvas has focus.
+        if (focus instanceof PSurfaceAWT.SmoothCanvas) return false;
+
+        boolean primary = e.isControlDown() || e.isMetaDown();
+        boolean shift   = e.isShiftDown();
+        boolean isText  = focus instanceof JTextComponent;
+        int code = e.getKeyCode();
+
+        if (primary && code == KeyEvent.VK_Z) {
+          history.undo(doc);
+          return true;
+        }
+        if (primary && (code == KeyEvent.VK_Y)) {
+          history.redo(doc);
+          return true;
+        }
+        if (code == KeyEvent.VK_E && !isText) {
+          ui.exportCanvas();
+          return true;
+        }
+        if (code == KeyEvent.VK_O && !isText) {
+          ui.openFileDialog();
+          return true;
+        }
+        return false;
+      }
+    });
+  }
 
   void render() {
     renderer.drawChecker(doc,doc.viewW,doc.viewH,50);
@@ -87,37 +129,19 @@ public class App {
     if(focus != null && (focus instanceof JTextComponent)) {
       return;
     }
-
-
-    if (primary && (k=='z' || k=='Z')) {
-      history.undo(doc);
-      return;
-    }
-    if (primary && shift&&(k=='z' || k=='Z')) {
-      history.redo(doc);
-      return;
-    }
-    if (k=='o' || k=='O') {
-      ui.openFileDialog();
-      return;
-    }
     if (ui != null && ui.layerListPanel != null && ui.layerListPanel.isFocusInside()) {
       return;
     }
-    if (k=='m' || k=='M') {
+    if (k=='h' || k=='H') {
       tools.setTool(new MoveTool());
       return;      
     }
-    if (k=='v' || k=='V') {
+    if (k=='m' || k=='M') {
     tools.setTool(new LayerMoveTool(history));
     return;
     }
     if (k=='c' || k=='C') {
       tools.setTool(new CropTool(history));
-      return;
-    }
-    if (k=='e' || k=='E') {
-      ui.exportCanvas();
       return;
     }
     if (k=='r' || k=='R') {

@@ -270,8 +270,8 @@ class LayerMoveTool implements Tool {
   CommandManager history;
   Layer target;
   
-  float startMouseX, startMouseY; // 鼠标按下时的 Canvas 坐标
-  float initialLayerX, initialLayerY; // 图层按下时的初始坐标
+  float startMouseX, startMouseY;
+  float initialLayerX, initialLayerY; 
   boolean dragging = false;
 
   LayerMoveTool(CommandManager history) {
@@ -285,7 +285,6 @@ class LayerMoveTool implements Tool {
     if (target == null) return;
 
     dragging = true;
-    // 将屏幕坐标转换为 Canvas 坐标，这样在缩放状态下移动也是准确的
     startMouseX = doc.view.screenToCanvasX(mx);
     startMouseY = doc.view.screenToCanvasY(my);
     
@@ -298,15 +297,10 @@ class LayerMoveTool implements Tool {
 
     float currentMouseX = doc.view.screenToCanvasX(mx);
     float currentMouseY = doc.view.screenToCanvasY(my);
-
-    // 计算鼠标位移量
     float dx = currentMouseX - startMouseX;
     float dy = currentMouseY - startMouseY;
-
-    // 实时更新图层位置（预览）
     target.x = initialLayerX + dx;
     target.y = initialLayerY + dy;
-    
     doc.markChanged(); 
   }
 
@@ -314,19 +308,15 @@ class LayerMoveTool implements Tool {
     if (!dragging || target == null) return;
     dragging = false;
 
-    // 只有当位置真的发生变化时，才提交到历史记录
     if (target.x != initialLayerX || target.y != initialLayerY) {
       history.perform(doc, new layerMoveCommand(target, initialLayerX, initialLayerY, target.x, target.y));
     }
   }
-
   public void mouseWheel(Document doc, float delta) {
-    doc.view.zoomAroundMouse(delta); // 移动工具下通常也允许缩放
+    doc.view.zoomAroundMouse(delta); 
   }
-
-  public void drawOverlay(Document doc) {
-    // 可以在这里给选中的图层画一个高亮框
-  }
-
+  public void drawOverlay(Document doc){
+    return;
+  } 
   public String name() { return "LayerMove"; }
 }
