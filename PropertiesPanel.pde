@@ -95,7 +95,7 @@ class PropertiesPanel {
     transformContent.add(rotationBlock);
 
     fieldScale = styledField("1.0");
-    sliderScale = buildSlider(10, 300, 100); // 0.1x - 3x
+    sliderScale = buildSlider(10, 900, 100); // 0.1x - 3x
     bindScaleControl(fieldScale, sliderScale);
     JPanel scaleBlock = makeSectionBlock("Scale");
     scaleBlock.add(makeRow("Scale", fieldScale, sliderScale));

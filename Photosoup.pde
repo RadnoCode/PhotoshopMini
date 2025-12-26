@@ -17,11 +17,6 @@ import java.awt.image.BufferedImage;
 import java.util.function.IntConsumer;
 import javax.swing.border.EmptyBorder;
 import com.formdev.flatlaf.FlatLightLaf;
-
-
-
-
-
 App app;
 
 // Prompt the user for canvas size before initializing the app.

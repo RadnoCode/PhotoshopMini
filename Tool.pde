@@ -104,6 +104,8 @@ class RotateTool implements Tool{
     float py = doc.view.canvasToScreenY(pivotCanvas.y);
     float a = atan2(my-py, mx-px);
     target.rotation = startRotation + (a - startAngle);
+    doc.markChanged(); 
+
   }
   public void mouseReleased(Document doc, int mx, int my, int btn) {
     if(!dragging||target==null) return;
@@ -123,10 +125,12 @@ class RotateTool implements Tool{
 class ScaleTool implements Tool{
   boolean dragging=false;
   Layer target;
-  CommandManager history ;
+  CommandManager history;
   float startX,startY,endX,endY;
+  float startD,endD;
+  float ratio;
   PVector pivotCanvas;
-  float scaleDelta;                                        
+  float scaleStart,scaleEnd;                                        
   ScaleTool(CommandManager history){
     this.history =history;
   }
@@ -138,19 +142,25 @@ class ScaleTool implements Tool{
     pivotCanvas=target.pivotCanvas();
     startX=doc.view.screenToCanvasX(mouseX);
     startY=doc.view.screenToCanvasY(mouseY);
-    scaleDelta=target.scale;
+    startD=pow(pow((startY-pivotCanvas.y),2)+pow((startX-pivotCanvas.x),2),0.5);
+    scaleStart=target.scale;
   }
 
   void mouseDragged(Document doc, int mx, int my, int btn){
     if(!dragging) return;
     endX=doc.view.screenToCanvasX(mouseX);
-    float ratio=(endX-pivotCanvas.x)/(startX-pivotCanvas.x);
-    scaleDelta=ratio;
-    target.scale=scaleDelta;
+    endY=doc.view.screenToCanvasY(mouseX);
+    endD=pow(pow((endY-pivotCanvas.y),2)+pow((endX-pivotCanvas.x),2),0.5);
+
+    float ratio=endD/startD;
+    scaleEnd=scaleStart*ratio;
+    target.scale=scaleEnd;
+      doc.markChanged(); 
+
   }
   void mouseReleased(Document doc, int mx, int my, int btn){
     dragging=false;
-    history.perform(doc,new ScaleCommand(target,target.scale,scaleDelta));
+    history.perform(doc,new ScaleCommand(target,scaleStart,scaleEnd));
   }
   void mouseWheel(Document doc, float delta){
     return;

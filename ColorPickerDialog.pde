@@ -30,7 +30,7 @@ class ColorPickerDialog extends JDialog {
   private final HueBar hueBar;
   private final SVSquare svSquare;
 
-  private boolean adjusting = false; // 防止递归
+  private boolean adjusting = false; //avoid echoing 
 
   public ColorPickerDialog(Window owner, int initialColARGB, IntConsumer onPreview, IntConsumer onCommit) {
     super(owner, "Pick text color", ModalityType.APPLICATION_MODAL);
@@ -51,7 +51,6 @@ class ColorPickerDialog extends JDialog {
     root.setBorder(new EmptyBorder(12, 12, 12, 12));
     root.setBackground(new Color(45, 45, 45));
 
-    // 中间：SV 方块 + Hue 条
     JPanel center = new JPanel();
     center.setOpaque(false);
     center.setLayout(new BoxLayout(center, BoxLayout.X_AXIS));
@@ -60,21 +59,20 @@ class ColorPickerDialog extends JDialog {
       sat = clamp01(s);
       val = clamp01(v);
       firePreview();
-      if (!isDragging) { /* 鼠标松手时也可以在这里做某些动作 */ }
+      if (!isDragging) { /*  */ }
     });
 
     hueBar = new HueBar(() -> hue, (h, isDragging) -> {
       hue = (float)((h % 360 + 360) % 360);
-      svSquare.invalidateCache(); // hue 变了，SV 图要重绘
+      svSquare.invalidateCache(); // 
       firePreview();
-      if (!isDragging) { /* 同上 */ }
+      if (!isDragging) { /*  */ }
     });
 
     center.add(svSquare);
     center.add(Box.createHorizontalStrut(10));
     center.add(hueBar);
 
-    // 右侧：预览 + 按钮
     JPanel right = new JPanel();
     right.setOpaque(false);
     right.setLayout(new BoxLayout(right, BoxLayout.Y_AXIS));
@@ -105,7 +103,6 @@ class ColorPickerDialog extends JDialog {
     pack();
     setLocationRelativeTo(owner);
 
-    // 初始预览一次
     firePreview();
   }
 
@@ -138,9 +135,9 @@ class ColorPickerDialog extends JDialog {
   }
 
   // ----------------------------
-  // 组件：Hue 色相条
+  // Hue
   // ----------------------------
-   class HueBar extends JComponent {
+  class HueBar extends JComponent {
     private final FloatSupplier getHue;
     private final HueListener listener;
 
@@ -220,7 +217,7 @@ class ColorPickerDialog extends JDialog {
   }
 
   // ----------------------------
-  // 组件：S/V 正方形
+  // Squre of SV
   // ----------------------------
    class SVSquare extends JComponent {
     private final FloatSupplier getHue, getSat, getVal;
@@ -297,11 +294,10 @@ class ColorPickerDialog extends JDialog {
 
       g2.drawImage(cache, 0, 0, null);
 
-      // 边框
       g2.setColor(new Color(255, 255, 255, 220));
       g2.drawRoundRect(0, 0, w - 1, h - 1, 10, 10);
 
-      // 选择器圆环
+      // ponit of mouse
       float s = getSat.getAsFloat();
       float v = getVal.getAsFloat();
       int cx = (int)(s * (w - 1));
@@ -319,7 +315,7 @@ class ColorPickerDialog extends JDialog {
   }
 
   // ----------------------------
-  // 预览框：旧色/新色
+  // preview color
   // ----------------------------
    class PreviewSwatch extends JComponent {
     private final IntSupplier getOld;
@@ -361,7 +357,7 @@ class ColorPickerDialog extends JDialog {
   }
 
   // ----------------------------
-  // HSV/RGB 工具
+  // change claor system between ARGB HSV
   // ----------------------------
   private  int[] argbToRgb(int argb) {
     return new int[] {
