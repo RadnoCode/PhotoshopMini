@@ -125,13 +125,12 @@ void buildTextTab() {
   textContent.setBorder(BorderFactory.createEmptyBorder(8, 5, 8, 15));
   textContent.setMaximumSize(new Dimension(300, 300));
 
-  // --- grid bag: 不强行拉高每行 ---
   JPanel textPanel = new JPanel(new GridBagLayout());
   textPanel.setOpaque(false);
   textPanel.setBorder(BorderFactory.createEmptyBorder());
 
   GridBagConstraints gc = new GridBagConstraints();
-  gc.insets = new Insets(6, 6, 6, 6);             // 行间距更紧凑
+  gc.insets = new Insets(6, 6, 6, 6);         
   gc.gridy = 0;
   gc.fill = GridBagConstraints.HORIZONTAL;
 
@@ -285,7 +284,8 @@ void buildTextTab() {
   void setVisible(boolean visible) {
     if (root != null) root.setVisible(visible);
   }
-  //add comment
+
+
   // --- Transform helpers ---
   JSlider buildSlider(int min, int max, int value) {
     JSlider s = new JSlider(min, max, value);

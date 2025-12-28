@@ -5,7 +5,7 @@ public class Document {
   ViewState view = new ViewState();
   LayerStack layers = new LayerStack();
   RenderFlags renderFlags = new RenderFlags();
-  int viewX, viewY, viewH, viewW;
+  int viewX, viewY, viewH, viewW;// be used to crop
 
   void markChanged() {
     renderFlags.dirtyComposite = true;

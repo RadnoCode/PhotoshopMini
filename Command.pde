@@ -1,7 +1,3 @@
-// =======================================================
-// 5) CommandstartYstem: discrete actions + Undo/Redo
-// =======================================================
-
 interface Command {
   void execute(Document doc);
   void undo(Document doc);

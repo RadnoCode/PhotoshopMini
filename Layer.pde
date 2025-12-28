@@ -49,7 +49,6 @@ class Layer {
         thumbnailDirty = true;
     }
 
-    // ----- Thumbnail pipeline -----
     PImage getThumbnail() {
         if (!thumbnailDirty && thumbnail != null && !filterdirty) {
             return thumbnail;

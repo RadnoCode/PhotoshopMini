@@ -1,9 +1,7 @@
 class Renderer{
 
   Renderer() {
-    // 默认构造方法为空，但是避免误认还是补充上了
   }
-  
   void drawChecker(Document doc,int w, int h, int s) {
     pushMatrix();
     doc.view.applyTransform();
@@ -18,9 +16,9 @@ class Renderer{
       doc.viewX, doc.viewY, doc.viewW, doc.viewH,
       doc.viewX, doc.viewY, doc.viewW, doc.viewH);
     popMatrix();
-  }// 棋盘格
+  }
 
-
+  //draw layers to canvas
   void drawCanvas(Document doc,ToolManager tools){
     if (!doc.renderFlags.dirtyComposite) {
       return;
@@ -39,15 +37,11 @@ class Renderer{
         continue;
       }
       pg.pushMatrix();
-
       pg.translate(l.x,l.y);
       pg.translate(l.pivotX,l.pivotY);
       pg.rotate(l.rotation);
       pg.scale(l.scale);
-      
-      //pg.tint(255,255*l.opacity);
-      //pg.image(l.img,-l.pivotX,-l.pivotY);
-      //pg.noTint();
+  
       l.drawSelf(doc);
       pg.popMatrix();
       
@@ -57,6 +51,7 @@ class Renderer{
     pg.endDraw();
     doc.renderFlags.dirtyComposite = false;
   }
+  //draw canvas to screen
   void drawToScreen(Document doc,ToolManager tools){
     pushMatrix();
     doc.view.applyTransform();

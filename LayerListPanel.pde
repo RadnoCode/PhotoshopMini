@@ -12,9 +12,7 @@ class LayerListPanel {
   ImageIcon add = new ImageIcon("data/icon/addlayer.png");
   ImageIcon remove = new ImageIcon("data/icon/trashbin.png");
 
-
-
-
+  
   JButton addButton = new JButton(add);
   JButton removeButton = new JButton(remove);
   JPanel container = new JPanel(new BorderLayout(6, 6));

@@ -3,6 +3,7 @@ class Filter{
     Layer layer;
     void apply(Layer l) {}
     
+    // restrict into target size
     int clamp255(int v) {
         return v < 0 ? 0 : (v > 255 ? 255 : v);
     }
@@ -51,6 +52,7 @@ class GaussianBlurFilter extends Filter{
         change = false;
         return kernel;
     }
+    // two direction to fast up
     PImage blurHorizontal(PImage src, float[] kernel, int radius) {
         PImage dst = createImage(src.width, src.height, RGB);
         src.loadPixels();
@@ -163,7 +165,7 @@ class ContrastFilter extends Filter{
             int r = (c >> 16) & 0xFF;
             int g = (c >> 8) & 0xFF;
             int b = c & 0xFF;
-            int a = (c >> 24) & 0xFF; // 保留 Alpha 通道
+            int a = (c >> 24) & 0xFF; //keep ALPHA
             
             r = (int)((r - 128) * value + 128);
             g = (int)((g - 128) * value + 128);
@@ -205,19 +207,16 @@ class SharpenFilter extends Filter{
             int row = y * w;
             for (int x = 0; x < w; x++) {
                 
-              // --- center pixel (straight alpha) ---
                 int c0 = src.pixels[row + x];
                 int a0 = (c0 >>> 24) & 255;
                 int r0 = (c0 >>> 16) & 255;
                 int g0 = (c0 >>>  8) & 255;
                 int b0 =  c0         & 255;
                 
-               // pre-multiplied center (0..255 range)
                 float pr0 = r0 * (a0 / 255.0f);
                 float pg0 = g0 * (a0 / 255.0f);
                 float pb0 = b0 * (a0 / 255.0f);
                 
-              // --- convolution in PREMULTIPLIED space ---
                 float pr =0, pg = 0, pb = 0;
                 int ki = 0;
                 
@@ -242,17 +241,13 @@ class SharpenFilter extends Filter{
                        pg += (gg * af) * weg;
                        pb += (bb * af) * weg;
                     }
-            }
-                
-              // --- adjustable strength: lerp in premultiplied space ---
+            }                
                // outPremul = srcPremul + strength*(convPremul - srcPremul)
                 float outPr = pr0 + strength * (pr - pr0);
                 float outPg = pg0 + strength * (pg - pg0);
                 float outPb = pb0 + strength * (pb - pb0);
-                
               // --- output alpha: keep original (typical layer filter behavior) ---
                 int outA =a0;
-                
               // --- unpremultiply back to straight RGB ---
                 int outR, outG, outB;
                 if (outA >0) {
