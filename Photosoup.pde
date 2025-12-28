@@ -1,9 +1,15 @@
 /*
+Group Member:
+    Lirong Zeng 2717396
+    Weixi Xiong 2727565
+    Boyu Li     2717266
+    Chenxin Wan 2717388
+    Henwen shi  2717478
+
+AI declaration:
+In order to make sure codes are shown in a right way, we make our AI declaration in the file "AI Declaration.markdown".
 
 */
-
-
-
 
 import java.awt.*;
 import java.awt.event.*;

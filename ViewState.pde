@@ -40,10 +40,10 @@ class ViewState {
     return panY + MouY * zoom; 
   }
 
-  void zoomAroundMouse(float delta) {// 鼠标向上滚动生成一个负数值，传进来delta
+  void zoomAroundMouse(float delta) { // get delta from wheel
     float oldZoom = zoom;
     float factor = pow(1.10, -delta);
-    zoom = constrain(oldZoom * factor, 0.1, 12.0); //限制最大和最小缩放
+    zoom = constrain(oldZoom * factor, 0.1, 12.0); //restrict maximum and minimum zoom
 
     float mx = mouseX, my = mouseY;
     float beforeX = (mx - panX) / oldZoom;

@@ -47,12 +47,9 @@ class UI {
     updateToolPanelLayout(height);
     highlightActiveTool(tools.activeName());
 
-    // statu
+    // setup panel
     fill(230);
     textSize(12);
-    text("Active Tool: " + tools.activeName(), RightpanelX + 12, height - 70);
-    text("X-axis: " + /*history.undoCount()*/mouseX, RightpanelX + 12, height - 50);
-    text("Y-axis: " + /*history.redoCount()*/mouseY, RightpanelX + 12, height - 30);
     Layer active = doc.layers.getActive();
     if (active == null) {
       if (propertiesPanel != null) propertiesPanel.setVisible(false);
@@ -82,23 +79,11 @@ class UI {
 
 
   // ----- Icon loading -----
-  Icon loadIcon(String file) {
-    return loadIcon(file, 26);
-  }
-
   Icon loadIcon(String file, int targetSize) {
     // Prefer SVG for crisp scaling to the exact button size.
     Icon svgIcon = loadSvgIcon(file, targetSize);
     if (svgIcon != null) return svgIcon;
-
-    // PNG fallback from data/icon.
-    PImage p = loadImage("icon/" + file + ".png");
-    if (p != null) {
-      PImage scaled = scaleIcon(p, targetSize);
-      return new ImageIcon((java.awt.Image) scaled.getNative());
-    }
-
-    println("Icon missing for: " + file + " (expected in data/icon/ as .svg or .png)");
+    println("Icon missing for: " + file + " (expected in data/icon/ as .svg)");
     return null;
   }
 
@@ -128,11 +113,12 @@ class UI {
   }
 
   int SizeFirst=32,SizeSecond=24;
+
   void addDivider(JPanel panel) {
     panel.add(Box.createVerticalStrut(8));
 
     JPanel line = new JPanel();
-    line.setMaximumSize(new Dimension(Integer.MAX_VALUE, 2));
+    line.setMaximumSize(new Dimension(Integer.MAX_VALUE, 2)); //2px in height 
     line.setPreferredSize(new Dimension(1, 1));
     line.setBackground(new Color(255,255,255,25));
     line.setOpaque(true);
@@ -165,6 +151,7 @@ class UI {
     if (icon == null) btn.setText(label);
     else btn.setText("");
     btn.setToolTipText(tooltip);
+    // in the center of button box
     btn.setHorizontalAlignment(SwingConstants.CENTER);
     btn.setVerticalAlignment(SwingConstants.CENTER);
     Dimension fixed = new Dimension(btnWidth, btnHeight);
@@ -191,6 +178,7 @@ class UI {
     toolPanel.setBackground(new Color(60, 60, 60)); // match app dark background
     toolPanel.setBorder(BorderFactory.createEmptyBorder(16, 0, 0, 4)); // remove padding gap
 
+    // listen to a event then do something.
     addToolButton(toolPanel,"import", "Import image (O)", () -> openFileDialog(),SizeFirst);
     addToolButton(toolPanel,"export", "Export canvas (E)", () -> exportCanvas(),SizeFirst);
     
@@ -452,7 +440,6 @@ class UI {
     output.save(path);
     println("Exported canvas to: " + path);
     lastExportDir = new File(path).getParentFile();
-    // 在独立应用里找不到文件时，弹窗告诉用户具体路径
     JOptionPane.showMessageDialog(
       null,
       "Successfully export to\n" + path,
